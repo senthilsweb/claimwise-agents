@@ -30,8 +30,14 @@ The full reasoning is in the article: Domain-Driven Design for AI — bounded co
 ## Stack
 
 - Python + Strands Agents SDK (agent loop, tools, agents-as-tools)
-- Amazon Bedrock (models) + AgentCore (Runtime, Gateway, Identity, Memory, Observability)
+- Amazon Bedrock (models) + AgentCore (Runtime ✅ built & tested locally, Observability ✅, Memory 🔧 code-ready/untested, Identity ✅ (the actual requirement — read-only enforcement — was already done in Bolt 1), Gateway 📝 designed, not built)
 - Data: DuckDB locally (`rcm.duckdb` from the claimwise repo), Databricks SQL in prod
+
+Real cloud deployment (`agentcore deploy`) is paused pending an IAM
+decision — see `openspec/changes/claimwise-revenue-copilot/tasks.md` B4 for
+the full reasoning and the concrete next steps once resumed. Everything
+that can be verified without it (the Runtime app, its routing, its
+tracing) already has been, over real HTTP.
 
 ## Quickstart
 
@@ -61,6 +67,14 @@ make run AGENT=steward
 make eval                       # 19 questions (golden + claim + routing), checked against live values
 ```
 
+To try the same Supervisor over HTTP the way AgentCore Runtime would call it:
+
+```bash
+PORT=18080 make runtime-dev     # serves agents/runtime.py locally
+curl -s localhost:18080/invocations -H 'Content-Type: application/json' \
+  -d '{"prompt": "What is our overall denial rate?"}'
+```
+
 ## Observability
 
 All optional, all off by default, and freely combinable — every configured
@@ -87,7 +101,8 @@ agents/
   glossary.py         the shared business glossary — one definition per term
   models.py           Bedrock model factory
   telemetry.py        LangSmith / Arize AX / generic OTLP export
-  cli.py              chat entrypoint (make run, make run AGENT=<name>)
+  cli.py              local chat entrypoint (make run, make run AGENT=<name>)
+  runtime.py          AgentCore Runtime HTTP entrypoint (make runtime-dev)
   tools/
     metrics.py        query_metric / explain_metric — the metrics allowlist
     billing.py        get_claim_story / list_claims — Claim owns activities + collections
@@ -95,7 +110,7 @@ agents/
     steward.py          run_dq_checks / get_lineage / glossary_lookup — governance
   contexts/            one file per bounded-context agent, plus supervisor.py
                         (agents-as-tools; the system prompt's context map is the routing table)
-  eval/                tool_smoke (no LLM, 29 checks) + golden/claim/routing evals (needs Bedrock)
+  eval/                tool_smoke (no LLM, 31 checks) + golden/claim/routing evals (needs Bedrock)
 ```
 
 Work follows AI-DLC: **Intent → Execution → Operations**. The intent for the first release is documented in [`openspec/changes/claimwise-revenue-copilot/`](openspec/changes/claimwise-revenue-copilot/).

@@ -44,7 +44,13 @@ compose the final answer yourself — never guess a number as a shortcut.
 """
 
 
-def build_agent(model) -> Agent:
+def build_agent(model, session_manager=None) -> Agent:
+    """session_manager: optional Strands SessionManager (e.g.
+    AgentCoreMemorySessionManager) for cross-invocation memory. Only the
+    Supervisor's own conversation is remembered — specialists are rebuilt
+    fresh on every tool call regardless, so memory never leaks into their
+    bounded contexts.
+    """
     specialists = [
         build_analyst(model).as_tool(),
         build_investigator(model).as_tool(),
@@ -57,4 +63,5 @@ def build_agent(model) -> Agent:
         tools=specialists,
         name="supervisor",
         description="Routes a Claimwise question to the right bounded-context specialist and composes the answer.",
+        session_manager=session_manager,
     )

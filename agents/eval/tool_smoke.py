@@ -132,6 +132,24 @@ def main() -> int:
     except ReadOnlyViolation:
         results.append(check("run_select rejects a write statement", True))
 
+    print("\nAgentCore Runtime app (agents/runtime.py, no model call):")
+    from starlette.testclient import TestClient
+
+    from agents.runtime import app as runtime_app
+
+    with TestClient(runtime_app) as client:
+        ping = client.get("/ping")
+        results.append(check("runtime app /ping responds", ping.status_code == 200 and ping.json().get("status") == "Healthy"))
+
+        empty = client.post("/invocations", json={})
+        body = empty.json()
+        results.append(
+            check(
+                "runtime app rejects an empty prompt without calling the model",
+                "error" in body and "prompt" in body["error"],
+            )
+        )
+
     passed = sum(results)
     total = len(results)
     print(f"\n{passed}/{total} checks passed.")

@@ -37,6 +37,15 @@ ARIZE_PROJECT_NAME = os.getenv("ARIZE_PROJECT_NAME", "claimwise-agents")
 OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
 OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
 
+# --- AgentCore Memory (optional — blank MEMORY_ID disables it entirely).
+# Needs a Memory resource already created via `MemoryClient.create_memory_and_wait(...)`,
+# which needs bedrock-agentcore:CreateMemory — not yet granted in this account
+# (see openspec/changes/claimwise-revenue-copilot/tasks.md, B4.4). ACTOR_ID is a
+# placeholder for a single-demo-user identity; a real deployment would derive
+# it from the caller's authenticated identity, not a fixed string.
+MEMORY_ID = os.getenv("MEMORY_ID", "")
+MEMORY_ACTOR_ID = os.getenv("MEMORY_ACTOR_ID", "demo-user")
+
 
 def require(value: str, name: str) -> str:
     if not value:

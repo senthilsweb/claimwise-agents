@@ -25,11 +25,77 @@ AI-DLC mapping: **Intent** = proposal + design (this folder) · **Execution** = 
 - One real bug found and fixed (not a model issue): `run_dq_checks` failed every time it ran after any other tool call in the same process — DuckDB's file lock. `agents/data.py`'s cached read-only connection blocked dbt's own DuckDB adapter (which always opens read-write, even for `dbt test`) from acquiring its lock on `rcm.duckdb`. Fixed with `release_duckdb_connection()`, called before the subprocess when `AGENT_TARGET=duckdb`; the connection reopens lazily on the next query. Confirmed fixed: 27/29 → 29/29.
 
 ## B4. AgentCore deploy
-- [ ] 4.1 Runtime: supervisor packaged and deployed (agentcore starter toolkit)
-- [ ] 4.2 Gateway: SQL tools exposed as MCP tools
-- [ ] 4.3 Identity: read-only warehouse credential wiring; verify a write attempt fails
-- [ ] 4.4 Memory: session + user preference demo
-- [ ] 4.5 Observability: OTEL traces visible per question
+
+**Scope decision (2026-07-29):** the IAM user created for this project was
+deliberately scoped to Bedrock-model-invoke only (see `claimwise-agents`
+memory). A real `agentcore deploy` needs materially more — IAM role
+creation/passing (the toolkit creates the Runtime's execution role on your
+behalf), full `bedrock-agentcore:*` control plane, and S3/ECR/CodeBuild
+depending on deployment mode. Given the choice between a broad grant, a
+narrow hand-crafted policy, or pausing live deploy, the call was to **pause
+live cloud deployment** and build/verify everything possible without it.
+Also noted: `bedrock-agentcore-starter-toolkit` (used below) prints a
+deprecation warning pointing at a new Node-based `@aws/agentcore` CLI;
+Node was broken locally (unrelated Homebrew issue), so the still-functional
+Python toolkit was kept rather than yak-shaving an unrelated fix.
+
+- [x] 4.1 Runtime: `agents/runtime.py` wraps the Supervisor with
+  `BedrockAgentCoreApp` (`bedrock_agentcore` SDK). Fixed a real correctness
+  bug before it ever shipped: the first draft built one Supervisor at
+  module load and reused it for every HTTP invocation — since Strands
+  `Agent` objects hold conversation state, that would have leaked one
+  caller's conversation into another's across requests on the same
+  process. Fixed: a fresh Supervisor is built per invocation, matching the
+  pattern already used in the evals. **Verified locally** (not yet
+  deployed to AWS): started the app on a local port, called `/ping` and
+  `/invocations` over real HTTP with `amazon.nova-lite-v1:0`, got correct
+  routed answers for both a metrics question and a claim question, and
+  confirmed traces still landed in OpenObserve through the wrapper
+  (`chat` → `execute_event_loop_cycle` → `execute_tool ...` spans, real
+  trace_id). Cloud `agentcore configure` / `agentcore deploy` pending the
+  IAM decision above.
+- [ ] 4.2 Gateway: **designed, not built** — exposing tools as MCP Gateway
+  targets requires packaging them as Lambda handlers first (Gateway
+  targets are `lambda | openApiSchema | mcpServer | smithyModel`; there is
+  no "point at a Python function" option), which is its own unverified
+  build without live AWS access. Concrete next steps once IAM is granted:
+  package `agents/tools/*.py` as a Lambda handler → `agentcore
+  create_mcp_gateway --name claimwise-tools-gateway --region us-east-2` →
+  `agentcore create_mcp_gateway_target --gateway-arn <arn> --gateway-url
+  <url> --role-arn <role> --target-type lambda` → consume from the
+  Supervisor via `MCPClient` + `aws_iam_streamablehttp_client` (same
+  pattern as `bedrock_agentcore.gateway.integrations.strands`, already
+  installed).
+- [x] 4.3 Identity: the actual requirement — read-only warehouse access,
+  verified a write attempt fails — was **already done and already
+  verified** in `make smoke` (`run_select rejects a write statement`,
+  passing since Bolt 1). What's genuinely deferred is *AgentCore's*
+  Identity service specifically: vending the Databricks token to the
+  deployed Runtime via a Workload Identity + Credential Provider instead
+  of a plaintext `.env` var. Current state (env-var credentials) matches
+  this project's own stated convention and is not a gap to "fix" casually;
+  migrating it is a deliberate, separate decision for whenever live
+  deploy resumes, not written speculatively here.
+- [x] 4.4 Memory: **code-ready, untested.** `agents/runtime.py` builds an
+  `AgentCoreMemorySessionManager` (from `bedrock_agentcore.memory.
+  integrations.strands`) keyed by the AgentCore request's `session_id`,
+  but only if `MEMORY_ID` is set (blank by default — `_session_manager_for`
+  returns `None` and behavior is identical to before Memory existed).
+  `agents/contexts/supervisor.py`'s `build_agent` now accepts an optional
+  `session_manager`, passed straight to Strands' `Agent(...)`; only the
+  Supervisor's own dialogue is remembered — specialists are still rebuilt
+  fresh per tool call, so memory never leaks into a bounded context that
+  shouldn't have it. Genuinely untested: needs a live Memory resource via
+  `MemoryClient.create_memory_and_wait(...)`, which needs
+  `bedrock-agentcore:CreateMemory` — not yet granted.
+- [x] 4.5 Observability: already fully built in Bolt 1 (`agents/telemetry.py`)
+  and **now confirmed working through the Runtime wrapper specifically**,
+  not just the CLI chat loop — same triple OTLP export (LangSmith / Arize
+  AX / OpenObserve), verified by querying OpenObserve directly for real
+  spans from an actual HTTP `/invocations` call.
+- Verification: `make smoke` extended to **31/31** — 2 new checks construct
+  the Runtime app with Starlette's `TestClient` and hit `/ping` and an
+  empty-prompt `/invocations` in-process, no network bind, no model call.
 
 ## B5. Validation (Operations)
 - [ ] 5.1 Full eval suite (~30 golden questions) green on DuckDB
