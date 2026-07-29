@@ -57,6 +57,17 @@ make run                # chat with the Revenue Analyst
 make eval                # golden questions, checked against live gold-layer values
 ```
 
+## Observability
+
+Optional, both off by default. Set `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY`
+and/or `ARIZE_SPACE_ID` + `ARIZE_API_KEY` in `.env` and every `make run` /
+`make eval` call dual-exports full traces — every prompt, every tool call
+with its inputs and outputs, every model response — to
+[LangSmith](https://smith.langchain.com) and [Arize AX](https://app.arize.com)
+via OpenTelemetry. `agents/telemetry.py` wires it up; no code changes needed
+to turn it on or off. Content is unredacted by default (see the module's
+docstring for the one env var that would turn redaction on).
+
 ## Structure
 
 ```

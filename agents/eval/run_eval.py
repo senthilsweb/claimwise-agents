@@ -11,6 +11,7 @@ import sys
 from agents.contexts.revenue_analyst import build_agent
 from agents.eval.golden_questions import GOLDEN_QUESTIONS
 from agents.models import get_model
+from agents.telemetry import setup_telemetry
 
 
 def _normalize(text: str) -> str:
@@ -19,6 +20,7 @@ def _normalize(text: str) -> str:
 
 
 def main() -> int:
+    setup_telemetry()
     agent = build_agent(get_model())
     passed = 0
 

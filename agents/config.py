@@ -19,6 +19,15 @@ DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH", "")
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "")
 DATABRICKS_CATALOG = os.getenv("DATABRICKS_CATALOG", "workspace")
 
+# --- Observability (all optional — absence just disables tracing) ---
+LANGSMITH_TRACING = os.getenv("LANGSMITH_TRACING", "false").strip().lower() == "true"
+LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY", "")
+LANGSMITH_PROJECT = os.getenv("LANGSMITH_PROJECT", "claimwise-agents")
+
+ARIZE_SPACE_ID = os.getenv("ARIZE_SPACE_ID", "")
+ARIZE_API_KEY = os.getenv("ARIZE_API_KEY", "")
+ARIZE_PROJECT_NAME = os.getenv("ARIZE_PROJECT_NAME", "claimwise-agents")
+
 
 def require(value: str, name: str) -> str:
     if not value:
