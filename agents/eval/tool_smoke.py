@@ -9,8 +9,11 @@ actually blocks a write, not just that nobody happened to try one.
 import sys
 
 from agents.data import ReadOnlyViolation, run_select
+from agents.glossary import GLOSSARY
+from agents.tools.advisor import appeal_outcomes, ar_aging, payer_scorecard
 from agents.tools.billing import get_claim_story, list_claims
 from agents.tools.metrics import METRIC_CATALOG, explain_metric, query_metric
+from agents.tools.steward import get_lineage, glossary_lookup, run_dq_checks
 
 
 def check(label: str, condition: bool, detail: str = "") -> bool:
@@ -70,6 +73,51 @@ def main() -> int:
 
     missing = get_claim_story("CLM00000000")  # does not exist
     results.append(check("get_claim_story reports not-found honestly", missing["found"] is False))
+
+    print("\nAdvisor tools (payer_scorecard / ar_aging / appeal_outcomes):")
+    scorecard = payer_scorecard(payer_name="UnitedHealthcare")
+    results.append(
+        check(
+            "payer_scorecard(payer_name=...) scopes to one payer",
+            scorecard["row_count"] == 1 and scorecard["rows"][0]["payer_name"] == "UnitedHealthcare",
+        )
+    )
+
+    aging = ar_aging(payer_name="UnitedHealthcare")
+    results.append(check("ar_aging(payer_name=...) returns aging buckets", aging["row_count"] > 0))
+
+    outcomes = appeal_outcomes()
+    results.append(
+        check(
+            "appeal_outcomes returns both outcome groups",
+            {r["outcome"] for r in outcomes["rows"]} == {"collected", "not_collected"},
+        )
+    )
+
+    print("\nSteward tools (run_dq_checks / get_lineage / glossary_lookup):")
+    dq = run_dq_checks()
+    results.append(check("run_dq_checks actually runs dbt test", dq.get("ran") and dq.get("parsed")))
+    results.append(check("run_dq_checks reports trustworthy on green tests", dq.get("trustworthy") is True))
+
+    lineage = get_lineage("mtr_claims_funnel")
+    results.append(
+        check(
+            "get_lineage finds a known model's real upstream",
+            lineage["found"] and "fct_claims" in lineage["upstream"],
+        )
+    )
+    missing_lineage = get_lineage("not_a_real_model")
+    results.append(check("get_lineage reports not-found honestly", missing_lineage["found"] is False))
+
+    term = glossary_lookup("denial rate")
+    results.append(check("glossary_lookup finds a known term", term["found"] and "denial_rate_pct" in term["definition"]))
+    unknown_term = glossary_lookup("something made up")
+    results.append(
+        check(
+            "glossary_lookup reports unknown terms honestly with the known list",
+            unknown_term["found"] is False and set(unknown_term["known_terms"]) == set(GLOSSARY.keys()),
+        )
+    )
 
     print("\nGuardrails:")
     try:

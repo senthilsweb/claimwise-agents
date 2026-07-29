@@ -51,6 +51,21 @@ def _get_duckdb_conn():
     return _duckdb_conn
 
 
+def release_duckdb_connection() -> None:
+    """Close our cached read-only DuckDB connection, if open.
+
+    DuckDB allows only one process to hold a lock on a file at a time, even
+    a read-only one, once anything else needs read-write access. dbt's own
+    DuckDB adapter always opens read-write (even for `dbt test`), so the
+    Data Steward calls this before shelling out to `dbt test` — the
+    connection reopens lazily on the next run_select() call.
+    """
+    global _duckdb_conn
+    if _duckdb_conn is not None:
+        _duckdb_conn.close()
+        _duckdb_conn = None
+
+
 def _get_databricks_conn():
     from databricks import sql as databricks_sql
 

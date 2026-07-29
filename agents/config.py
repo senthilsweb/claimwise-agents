@@ -14,6 +14,10 @@ BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "")
 
 DUCKDB_PATH = os.getenv("DUCKDB_PATH", "")
 
+# The claimwise dbt-pipeline repo root — needed only by the Data Steward
+# (run_dq_checks runs `dbt test` there; get_lineage reads its manifest.json).
+CLAIMWISE_DBT_PATH = os.getenv("CLAIMWISE_DBT_PATH", "")
+
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST", "")
 DATABRICKS_HTTP_PATH = os.getenv("DATABRICKS_HTTP_PATH", "")
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "")

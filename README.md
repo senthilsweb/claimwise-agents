@@ -23,9 +23,9 @@ The full reasoning is in the article: Domain-Driven Design for AI — bounded co
 |---|---|---|---|
 | Revenue Analyst | gold/metrics | ✅ built | "What is our denial rate?" — reads `mtr_claims_funnel` |
 | Claims Investigator | gold/billing | ✅ built | "Why is this claim unpaid?" — narrates filed → denied → appealed → collected |
-| Denials & AR Advisor | gold/billing | planned (Bolt 3) | "Which payer is hurting us? Are appeals worth it?" |
-| Data Steward | pipeline governance | planned (Bolt 3) | "Can I trust these numbers today?" — dbt test status, lineage |
-| Supervisor | context map | planned (Bolt 3) | routes by vocabulary |
+| Denials & AR Advisor | gold/billing | ✅ built | "Which payer is hurting us? Are appeals worth it?" |
+| Data Steward | pipeline governance | ✅ built | "Can I trust these numbers today?" — live dbt test status, real lineage |
+| Supervisor | context map | ✅ built | routes to the right specialist, composes multi-part answers |
 
 ## Stack
 
@@ -53,9 +53,12 @@ Talking to the agent needs an AWS account with Bedrock model access:
 ```bash
 aws sso login          # or however you authenticate
 # set BEDROCK_MODEL_ID in .env to a Claude model id you have access to
-make run                        # chat with the Revenue Analyst (default)
-make run AGENT=investigator     # chat with the Claims Investigator instead
-make eval                       # golden questions for both agents, checked against live gold-layer values
+make run                        # chat with the Supervisor — the full crew (default)
+make run AGENT=analyst          # or talk to one specialist directly:
+make run AGENT=investigator     #   analyst | investigator | advisor | steward
+make run AGENT=advisor
+make run AGENT=steward
+make eval                       # 19 questions (golden + claim + routing), checked against live values
 ```
 
 ## Observability
@@ -78,16 +81,21 @@ docstring for the one env var that would turn redaction on).
 ```
 openspec/           specs and change proposals (start here — the intent lives here)
 agents/
-  config.py            env-driven settings
-  data.py              read-only adapter (DuckDB/Databricks), enforces the trust boundary
-  sqlutil.py            shared SQL-literal-escaping helper
-  models.py             Bedrock model factory
-  telemetry.py           LangSmith / Arize AX / generic OTLP export
-  cli.py                 chat entrypoint (make run, make run AGENT=investigator)
-  tools/metrics.py      query_metric / explain_metric — the metrics glossary + allowlist
-  tools/billing.py       get_claim_story / list_claims — the billing aggregate (Claim owns activities + collections)
-  contexts/               one file per bounded-context agent
-  eval/                   tool_smoke (no LLM) + golden-question eval for both agents (needs Bedrock)
+  config.py           env-driven settings
+  data.py             read-only adapter (DuckDB/Databricks), enforces the trust boundary
+  sqlutil.py          shared SQL-literal-escaping helper
+  glossary.py         the shared business glossary — one definition per term
+  models.py           Bedrock model factory
+  telemetry.py        LangSmith / Arize AX / generic OTLP export
+  cli.py              chat entrypoint (make run, make run AGENT=<name>)
+  tools/
+    metrics.py        query_metric / explain_metric — the metrics allowlist
+    billing.py        get_claim_story / list_claims — Claim owns activities + collections
+    advisor.py         payer_scorecard / ar_aging / appeal_outcomes — portfolio view
+    steward.py          run_dq_checks / get_lineage / glossary_lookup — governance
+  contexts/            one file per bounded-context agent, plus supervisor.py
+                        (agents-as-tools; the system prompt's context map is the routing table)
+  eval/                tool_smoke (no LLM, 29 checks) + golden/claim/routing evals (needs Bedrock)
 ```
 
 Work follows AI-DLC: **Intent → Execution → Operations**. The intent for the first release is documented in [`openspec/changes/claimwise-revenue-copilot/`](openspec/changes/claimwise-revenue-copilot/).
