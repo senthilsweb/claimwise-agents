@@ -9,6 +9,7 @@ actually blocks a write, not just that nobody happened to try one.
 import sys
 
 from agents.data import ReadOnlyViolation, run_select
+from agents.tools.billing import get_claim_story, list_claims
 from agents.tools.metrics import METRIC_CATALOG, explain_metric, query_metric
 
 
@@ -36,6 +37,39 @@ def main() -> int:
                 f"got {result['row_count']} rows",
             )
         )
+
+    print("\nBilling tools (list_claims / get_claim_story):")
+    listed = list_claims(limit=5)
+    results.append(check("list_claims(limit=5)", listed["row_count"] > 0, f"got {listed['row_count']} rows"))
+
+    denied = list_claims(claim_status="Denied", limit=5)
+    results.append(
+        check(
+            "list_claims(claim_status='Denied') only returns denied claims",
+            all(r["claim_status"] == "Denied" for r in denied["rows"]),
+        )
+    )
+
+    story = get_claim_story("CLM48516149")  # known appealed claim with an appeal activity
+    results.append(check("get_claim_story finds a known claim", story["found"]))
+    results.append(
+        check(
+            "get_claim_story returns its appeal activity",
+            any(a["is_appeal"] for a in story.get("activities", [])),
+        )
+    )
+
+    collected = get_claim_story("CLM46475778")  # known approved claim with a processed collection
+    results.append(
+        check(
+            "get_claim_story computes total_collected from real rows",
+            collected["found"] and collected["total_collected"] > 0,
+            f"got {collected.get('total_collected')}",
+        )
+    )
+
+    missing = get_claim_story("CLM00000000")  # does not exist
+    results.append(check("get_claim_story reports not-found honestly", missing["found"] is False))
 
     print("\nGuardrails:")
     try:

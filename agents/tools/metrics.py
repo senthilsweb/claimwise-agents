@@ -8,6 +8,7 @@ cannot be queried, full stop — the agent never sees or joins raw facts.
 from strands import tool
 
 from agents import data
+from agents.sqlutil import sql_literal
 
 METRIC_CATALOG: dict[str, dict] = {
     "mtr_executive_summary": {
@@ -101,15 +102,6 @@ def _validate_columns(table: str, columns: list[str]) -> None:
         raise ValueError(f"Unknown column(s) {unknown} for {table}. Allowed columns: {allowed}")
 
 
-def _sql_literal(value) -> str:
-    if value is None:
-        return "NULL"
-    if isinstance(value, (int, float)):
-        return str(value)
-    escaped = str(value).replace("'", "''")
-    return f"'{escaped}'"
-
-
 @tool
 def explain_metric(table: str) -> dict:
     """Look up what a published metric table means before querying it.
@@ -165,7 +157,7 @@ def query_metric(
 
     if filters:
         _validate_columns(table, list(filters.keys()))
-        clauses = [f"{col} = {_sql_literal(val)}" for col, val in filters.items()]
+        clauses = [f"{col} = {sql_literal(val)}" for col, val in filters.items()]
         sql_parts.append("WHERE " + " AND ".join(clauses))
 
     if order_by:

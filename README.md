@@ -19,13 +19,13 @@ The full reasoning is in the article: Domain-Driven Design for AI — bounded co
 
 ## The agents
 
-| Agent | Bounded context | Answers |
-|---|---|---|
-| Revenue Analyst | gold/metrics | "What is our denial rate?" — reads `mtr_claims_funnel` |
-| Claims Investigator | gold/billing | "Why is this claim unpaid?" — narrates filed → denied → appealed → collected |
-| Denials & AR Advisor | gold/billing | "Which payer is hurting us? Are appeals worth it?" |
-| Data Steward | pipeline governance | "Can I trust these numbers today?" — dbt test status, lineage |
-| Supervisor | context map | routes by vocabulary |
+| Agent | Bounded context | Status | Answers |
+|---|---|---|---|
+| Revenue Analyst | gold/metrics | ✅ built | "What is our denial rate?" — reads `mtr_claims_funnel` |
+| Claims Investigator | gold/billing | ✅ built | "Why is this claim unpaid?" — narrates filed → denied → appealed → collected |
+| Denials & AR Advisor | gold/billing | planned (Bolt 3) | "Which payer is hurting us? Are appeals worth it?" |
+| Data Steward | pipeline governance | planned (Bolt 3) | "Can I trust these numbers today?" — dbt test status, lineage |
+| Supervisor | context map | planned (Bolt 3) | routes by vocabulary |
 
 ## Stack
 
@@ -53,8 +53,9 @@ Talking to the agent needs an AWS account with Bedrock model access:
 ```bash
 aws sso login          # or however you authenticate
 # set BEDROCK_MODEL_ID in .env to a Claude model id you have access to
-make run                # chat with the Revenue Analyst
-make eval                # golden questions, checked against live gold-layer values
+make run                        # chat with the Revenue Analyst (default)
+make run AGENT=investigator     # chat with the Claims Investigator instead
+make eval                       # golden questions for both agents, checked against live gold-layer values
 ```
 
 ## Observability
@@ -77,13 +78,16 @@ docstring for the one env var that would turn redaction on).
 ```
 openspec/           specs and change proposals (start here — the intent lives here)
 agents/
-  config.py          env-driven settings
-  data.py            read-only adapter (DuckDB/Databricks), enforces the trust boundary
-  models.py           Bedrock model factory
-  cli.py              chat entrypoint (make run)
-  tools/metrics.py    query_metric / explain_metric — the metrics glossary + allowlist
-  contexts/           one file per bounded-context agent
-  eval/               tool_smoke (no LLM) + golden-question eval (needs Bedrock)
+  config.py            env-driven settings
+  data.py              read-only adapter (DuckDB/Databricks), enforces the trust boundary
+  sqlutil.py            shared SQL-literal-escaping helper
+  models.py             Bedrock model factory
+  telemetry.py           LangSmith / Arize AX / generic OTLP export
+  cli.py                 chat entrypoint (make run, make run AGENT=investigator)
+  tools/metrics.py      query_metric / explain_metric — the metrics glossary + allowlist
+  tools/billing.py       get_claim_story / list_claims — the billing aggregate (Claim owns activities + collections)
+  contexts/               one file per bounded-context agent
+  eval/                   tool_smoke (no LLM) + golden-question eval for both agents (needs Bedrock)
 ```
 
 Work follows AI-DLC: **Intent → Execution → Operations**. The intent for the first release is documented in [`openspec/changes/claimwise-revenue-copilot/`](openspec/changes/claimwise-revenue-copilot/).
