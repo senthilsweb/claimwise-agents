@@ -35,13 +35,40 @@ The full reasoning is in the article: Domain-Driven Design for AI — bounded co
 
 ## Quickstart
 
-Coming with Bolt 1. The dev loop will be the same as the pipeline's: clone, `make setup`, ask a question, no cloud needed.
+```bash
+git clone https://github.com/senthilsweb/claimwise-agents.git
+cd claimwise-agents
+cp .env.sample .env   # point DUCKDB_PATH at your built claimwise/dbt-pipeline/rcm.duckdb
+
+make setup   # uv sync
+make smoke   # no-LLM check: data adapter + tools work against the real gold layer
+```
+
+`make smoke` needs nothing but a built DuckDB file — no AWS, no Bedrock. It
+proves the read-only guard, the metric allowlist, and every `mtr_*` table
+actually resolve.
+
+Talking to the agent needs an AWS account with Bedrock model access:
+
+```bash
+aws sso login          # or however you authenticate
+# set BEDROCK_MODEL_ID in .env to a Claude model id you have access to
+make run                # chat with the Revenue Analyst
+make eval                # golden questions, checked against live gold-layer values
+```
 
 ## Structure
 
 ```
-openspec/    specs and change proposals (start here — the intent lives here)
-agents/      agent code (arrives via the bolts)
+openspec/           specs and change proposals (start here — the intent lives here)
+agents/
+  config.py          env-driven settings
+  data.py            read-only adapter (DuckDB/Databricks), enforces the trust boundary
+  models.py           Bedrock model factory
+  cli.py              chat entrypoint (make run)
+  tools/metrics.py    query_metric / explain_metric — the metrics glossary + allowlist
+  contexts/           one file per bounded-context agent
+  eval/               tool_smoke (no LLM) + golden-question eval (needs Bedrock)
 ```
 
 Work follows AI-DLC: **Intent → Execution → Operations**. The intent for the first release is documented in [`openspec/changes/claimwise-revenue-copilot/`](openspec/changes/claimwise-revenue-copilot/).

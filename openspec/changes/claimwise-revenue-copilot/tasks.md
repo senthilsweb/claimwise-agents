@@ -3,10 +3,11 @@
 AI-DLC mapping: **Intent** = proposal + design (this folder) · **Execution** = bolts B1–B4 · **Operations** = B5 validation against real runs.
 
 ## B1. Revenue Analyst, local
-- [ ] 1.1 Project scaffold: uv, `agents/` package, Makefile (`setup / run / eval`), data adapter (DuckDB/Databricks from env)
-- [ ] 1.2 Tools: `query_metric` (mtr_* allowlist), `explain_metric` (definition + underlying SQL)
-- [ ] 1.3 Revenue Analyst agent with the metrics glossary; CLI chat entrypoint
-- [ ] 1.4 Smoke eval: 5 metric questions match live `mtr_*` values on DuckDB
+- [x] 1.1 Project scaffold: uv, `agents/` package, Makefile (`setup / smoke / run / eval`), data adapter (DuckDB/Databricks from env, read-only enforced in `data.run_select`)
+- [x] 1.2 Tools: `query_metric` (mtr_* allowlist, 6 tables), `explain_metric` (description + grain + column meanings)
+- [x] 1.3 Revenue Analyst agent with the metrics glossary; CLI chat entrypoint (`make run`)
+- [x] 1.4a No-LLM tool smoke check (`make smoke`) — 14/14 passing against the real gold layer (all 6 tables resolve, non-metric table rejected, write statement rejected)
+- [ ] 1.4b Golden-question eval through the real agent (`make eval`, `agents/eval/run_eval.py` + `golden_questions.py` written, 5 questions) — **blocked: no AWS credentials configured in this environment.** Needs `BEDROCK_MODEL_ID` set to a model you have Bedrock access to, and `aws sso login` (or equivalent) before this can run.
 
 ## B2. Claims Investigator + data scale-up
 - [ ] 2.1 Coordination (claimwise repo): raise generator volume to a few thousand claims, rebuild seeds + `rcm.duckdb`

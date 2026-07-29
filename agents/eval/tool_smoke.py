@@ -1,0 +1,60 @@
+"""No-LLM smoke check: does the data adapter + tool layer actually work?
+
+Run with `make smoke`. This does not call Bedrock — it exercises the same
+code path the agent's tools use, directly, so data/config problems surface
+before you spend a model call on them. It also proves the read-only guard
+actually blocks a write, not just that nobody happened to try one.
+"""
+
+import sys
+
+from agents.data import ReadOnlyViolation, run_select
+from agents.tools.metrics import METRIC_CATALOG, explain_metric, query_metric
+
+
+def check(label: str, condition: bool, detail: str = "") -> bool:
+    status = "PASS" if condition else "FAIL"
+    print(f"  [{status}] {label}" + (f" — {detail}" if detail and not condition else ""))
+    return condition
+
+
+def main() -> int:
+    results = []
+
+    print("Metric catalog and explain_metric:")
+    for table in METRIC_CATALOG:
+        info = explain_metric(table)
+        results.append(check(f"explain_metric('{table}')", info["table"] == table))
+
+    print("\nquery_metric against every published table:")
+    for table in METRIC_CATALOG:
+        result = query_metric(table, limit=3)
+        results.append(
+            check(
+                f"query_metric('{table}')",
+                result["row_count"] > 0,
+                f"got {result['row_count']} rows",
+            )
+        )
+
+    print("\nGuardrails:")
+    try:
+        query_metric("fct_claims")  # not in the allowlist
+        results.append(check("query_metric rejects a non-metric table", False))
+    except ValueError:
+        results.append(check("query_metric rejects a non-metric table", True))
+
+    try:
+        run_select("DELETE FROM gold.mtr_claims_funnel")
+        results.append(check("run_select rejects a write statement", False))
+    except ReadOnlyViolation:
+        results.append(check("run_select rejects a write statement", True))
+
+    passed = sum(results)
+    total = len(results)
+    print(f"\n{passed}/{total} checks passed.")
+    return 0 if passed == total else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
