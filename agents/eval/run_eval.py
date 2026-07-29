@@ -13,6 +13,11 @@ from agents.eval.golden_questions import GOLDEN_QUESTIONS
 from agents.models import get_model
 
 
+def _normalize(text: str) -> str:
+    """Strip thousands separators so '4,729,526.38' matches '4729526.38'."""
+    return text.replace(",", "")
+
+
 def main() -> int:
     agent = build_agent(get_model())
     passed = 0
@@ -20,7 +25,7 @@ def main() -> int:
     for gq in GOLDEN_QUESTIONS:
         expected = gq.expected()
         answer = str(agent(gq.question))
-        ok = expected in answer
+        ok = _normalize(expected) in _normalize(answer)
         status = "PASS" if ok else "FAIL"
         print(f"[{status}] {gq.id}: expected '{expected}' in answer to \"{gq.question}\"")
         if not ok:

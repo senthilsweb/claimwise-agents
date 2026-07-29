@@ -7,7 +7,7 @@ AI-DLC mapping: **Intent** = proposal + design (this folder) · **Execution** = 
 - [x] 1.2 Tools: `query_metric` (mtr_* allowlist, 6 tables), `explain_metric` (description + grain + column meanings)
 - [x] 1.3 Revenue Analyst agent with the metrics glossary; CLI chat entrypoint (`make run`)
 - [x] 1.4a No-LLM tool smoke check (`make smoke`) — 14/14 passing against the real gold layer (all 6 tables resolve, non-metric table rejected, write statement rejected)
-- [ ] 1.4b Golden-question eval through the real agent (`make eval`, `agents/eval/run_eval.py` + `golden_questions.py` written, 5 questions) — **blocked: no AWS credentials configured in this environment.** Needs `BEDROCK_MODEL_ID` set to a model you have Bedrock access to, and `aws sso login` (or equivalent) before this can run.
+- [x] 1.4b Golden-question eval through the real agent — **5/5 passing**, verified 2026-07-29 with `amazon.nova-lite-v1:0` (Claude Sonnet 5 via `us.anthropic.claude-sonnet-5` is the intended default but is temporarily blocked by an AWS Marketplace payment-instrument verification on this account; swap `BEDROCK_MODEL_ID` back once that clears — no code changes needed, model is env-driven). One real bug found and fixed along the way: the agent answered a company-wide total by manually summing ~40 rows of a breakdown table instead of reading the pre-aggregated `mtr_executive_summary` row, and got it wrong twice with two different wrong numbers. Fixed by adding an explicit "prefer the most aggregated table; never sum across rows yourself" rule to the system prompt — confirmed fixed on re-test.
 
 ## B2. Claims Investigator + data scale-up
 - [ ] 2.1 Coordination (claimwise repo): raise generator volume to a few thousand claims, rebuild seeds + `rcm.duckdb`

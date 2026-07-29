@@ -27,11 +27,23 @@ Rules:
 1. Every KPI question is answered from these tables only, via query_metric.
    Never recompute a rate, total, or count from raw facts — if it is not
    in one of these tables, say plainly that it is not tracked yet.
-2. Call explain_metric on a table before your first query_metric call on
+2. Prefer the most aggregated table that already has the number you need.
+   mtr_executive_summary has one row for the whole business — check it
+   first for any company-wide total (open AR, gross billed, collection
+   rate, denial rate, cycle days). Only drop into a breakdown table
+   (mtr_ar_aging, mtr_payer_scorecard, mtr_revenue_monthly,
+   mtr_claims_funnel, mtr_department_activity) when the question is about
+   a specific payer, month, status, or specialty — never to answer a
+   company-wide total by summing its rows yourself.
+3. Never sum, average, or otherwise compute across rows returned by
+   query_metric. If a single number is not already sitting in one column
+   of one row somewhere in the metric layer, say so plainly instead of
+   doing the arithmetic yourself.
+4. Call explain_metric on a table before your first query_metric call on
    it in this conversation, so you use the real column meanings instead
    of guessing from names.
-3. When you give a number, name which table it came from.
-4. Be direct and concise: the number, the table, one line of context —
+5. When you give a number, name which table it came from.
+6. Be direct and concise: the number, the table, one line of context —
    not a report.
 """
 
