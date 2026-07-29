@@ -59,13 +59,17 @@ make eval                # golden questions, checked against live gold-layer val
 
 ## Observability
 
-Optional, both off by default. Set `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY`
-and/or `ARIZE_SPACE_ID` + `ARIZE_API_KEY` in `.env` and every `make run` /
-`make eval` call dual-exports full traces — every prompt, every tool call
-with its inputs and outputs, every model response — to
-[LangSmith](https://smith.langchain.com) and [Arize AX](https://app.arize.com)
-via OpenTelemetry. `agents/telemetry.py` wires it up; no code changes needed
-to turn it on or off. Content is unredacted by default (see the module's
+All optional, all off by default, and freely combinable — every configured
+backend gets the full trace. Set any of these in `.env` and `make run` /
+`make eval` export every prompt, every tool call with its inputs and
+outputs, and every model response to it via OpenTelemetry:
+
+- `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY` → [LangSmith](https://smith.langchain.com)
+- `ARIZE_SPACE_ID` + `ARIZE_API_KEY` → [Arize AX](https://app.arize.com)
+- `OTEL_EXPORTER_OTLP_ENDPOINT` + `OTEL_EXPORTER_OTLP_HEADERS` → any generic OTLP/HTTP collector (e.g. a home-lab OpenObserve instance)
+
+`agents/telemetry.py` wires it up; no code changes needed to turn any of
+these on or off. Content is unredacted by default (see the module's
 docstring for the one env var that would turn redaction on).
 
 ## Structure

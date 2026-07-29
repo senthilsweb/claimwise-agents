@@ -28,6 +28,11 @@ ARIZE_SPACE_ID = os.getenv("ARIZE_SPACE_ID", "")
 ARIZE_API_KEY = os.getenv("ARIZE_API_KEY", "")
 ARIZE_PROJECT_NAME = os.getenv("ARIZE_PROJECT_NAME", "claimwise-agents")
 
+# Generic OTLP endpoint — used for the home-lab OpenObserve instance
+# (telemetry.nathansweb.com), but works with any OTLP/HTTP collector.
+OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
+
 
 def require(value: str, name: str) -> str:
     if not value:
