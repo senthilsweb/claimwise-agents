@@ -2,10 +2,14 @@
 # AgentCore Supervisor through chat-adapter/. Reads AWS creds and
 # AGENT_RUNTIME_ARN from .env (compose loads it automatically).
 #
-#   docker compose up --build   ->  open http://localhost:3000
+#   docker compose up   ->  open http://localhost:3000
+#
+# Both images are pulled from GHCR — no local build. `docker compose pull`
+# refreshes the adapter after a new publish. Iterating on the adapter
+# source? Swap `image:` for `build: chat-adapter` while you work.
 services:
   chat-adapter:
-    build: chat-adapter
+    image: ghcr.io/senthilsweb/claimwise-chat-adapter:latest
     ports:
       - "8006:8006"
     environment:

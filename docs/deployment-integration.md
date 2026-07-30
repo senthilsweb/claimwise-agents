@@ -127,7 +127,7 @@ the root `docker-compose.yml` runs both for testing:
 
 ```bash
 # needs AGENT_RUNTIME_ARN in .env (the agent_arn from .bedrock_agentcore.yaml)
-make chat        # = docker compose up --build
+make chat        # = docker compose up (both images pulled from GHCR)
 open http://localhost:3000
 ```
 

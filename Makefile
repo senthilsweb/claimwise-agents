@@ -38,7 +38,7 @@ eval:
 	uv run python -m agents.eval.run_eval
 
 chat:
-	docker compose up --build
+	docker compose up
 
 clean:
 	rm -rf .venv
