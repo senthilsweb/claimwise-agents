@@ -19,11 +19,17 @@ Claimwise Revenue Copilot — multi-agent showcase on Strands Agents + Amazon Be
 - Dual target like the pipeline: DuckDB for dev (`AGENT_TARGET=duckdb`, zero infra), Databricks SQL for prod. Tools must work on both — portable SQL only, unquoted identifiers.
 - Evals are deterministic where possible: golden questions with expected numbers computed from the metric tables themselves.
 
-## Commands
-
-None yet — Bolt 1 introduces `make setup / run / eval`. Keep the Makefile deliberately simple.
-
 ## Gotchas
 
 - The local DuckDB file is built by the claimwise repo (`make setup deps build` there); this repo only reads it.
 - Databricks serverless rejects double-quoted identifiers — same rule as the pipeline: never quote identifiers in SQL.
+- `agents/data.py` caches one read-only DuckDB connection per process. The Data Steward's `run_dq_checks` shells out to `dbt test`, which always opens the file read-write — it calls `release_duckdb_connection()` first, or it hits a lock conflict (see docs Runbook).
+- Runtime entrypoints (`agents/runtime.py`) must build a fresh `Agent` per invocation, never reuse one across requests — Strands `Agent` objects hold conversation state.
+
+## Docs
+
+Every command, every env var, and the full agent design are in the
+published wiki (`docs/`, built by `mkdocs`) — see
+[docs/index.md](docs/index.md) or the live site at
+https://senthilsweb.github.io/claimwise-agents/. This file stays short and
+behavioral; don't duplicate wiki content back into it.

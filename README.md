@@ -1,119 +1,70 @@
 # Claimwise Agents
 
-Multi-agent showcase built with [Strands Agents](https://strandsagents.com) and deployed on [Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/). One agent per bounded context, over the [Claimwise](https://github.com/senthilsweb/claimwise) dbt semantic layer.
+**Claimwise Revenue Copilot** — a multi-agent showcase built with
+[Strands Agents](https://strandsagents.com), deployed on
+[Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/). One
+agent per bounded context, over the
+[Claimwise](https://github.com/senthilsweb/claimwise) dbt gold layer. The
+[Revenue Pulse dashboard](https://github.com/senthilsweb/claimwise/tree/main/dashboards)
+shows the numbers; this copilot explains them.
 
-**Project name: Claimwise Revenue Copilot.** The [Revenue Pulse dashboard](https://github.com/senthilsweb/claimwise/tree/main/dashboards) shows the numbers. This copilot explains them.
+```mermaid
+flowchart LR
+    U[Your question] --> S[Supervisor]
+    S --> A[Revenue Analyst<br/>gold/metrics]
+    S --> I[Claims Investigator<br/>gold/billing]
+    S --> D[Denials & AR Advisor<br/>gold/billing]
+    S --> W[Data Steward<br/>governance]
+```
 
-## The idea
-
-Claimwise is a healthcare billing (RCM) pipeline: hospital treats patients, claims go to payers, some get denied, staff appeal, money arrives slowly. Its gold layer is organized as bounded contexts — `clinical`, `billing`, `admin` — with a metric layer (`mtr_*` tables) where every KPI is defined once.
-
-This repo makes that design executable:
-
-- Each bounded context becomes **one agent** with its own vocabulary and tools.
-- A **supervisor** routes questions between them (agents-as-tools).
-- Agents answer metric questions **only from the metric layer** — read, never recompute.
-- All agents are **read-only**. The trust boundary is enforced, not promised.
-
-The full reasoning is in the article: Domain-Driven Design for AI — bounded contexts, ubiquitous language, and why agents need them.
-
-## The agents
-
-| Agent | Bounded context | Status | Answers |
-|---|---|---|---|
-| Revenue Analyst | gold/metrics | ✅ built | "What is our denial rate?" — reads `mtr_claims_funnel` |
-| Claims Investigator | gold/billing | ✅ built | "Why is this claim unpaid?" — narrates filed → denied → appealed → collected |
-| Denials & AR Advisor | gold/billing | ✅ built | "Which payer is hurting us? Are appeals worth it?" |
-| Data Steward | pipeline governance | ✅ built | "Can I trust these numbers today?" — live dbt test status, real lineage |
-| Supervisor | context map | ✅ built | routes to the right specialist, composes multi-part answers |
-
-## Stack
-
-- Python + Strands Agents SDK (agent loop, tools, agents-as-tools)
-- Amazon Bedrock (models) + AgentCore (Runtime ✅ built & tested locally, Observability ✅, Memory 🔧 code-ready/untested, Identity ✅ (the actual requirement — read-only enforcement — was already done in Bolt 1), Gateway 📝 designed, not built)
-- Data: DuckDB locally (`rcm.duckdb` from the claimwise repo), Databricks SQL in prod
-
-Real cloud deployment (`agentcore deploy`) is paused pending an IAM
-decision — see `openspec/changes/claimwise-revenue-copilot/tasks.md` B4 for
-the full reasoning and the concrete next steps once resumed. Everything
-that can be verified without it (the Runtime app, its routing, its
-tracing) already has been, over real HTTP.
-
-## Quickstart
+## I want to… → run this
 
 ```bash
-git clone https://github.com/senthilsweb/claimwise-agents.git
-cd claimwise-agents
-cp .env.sample .env   # point DUCKDB_PATH at your built claimwise/dbt-pipeline/rcm.duckdb
-
-make setup   # uv sync
-make smoke   # no-LLM check: data adapter + tools work against the real gold layer
+git clone https://github.com/senthilsweb/claimwise-agents.git && cd claimwise-agents
+cp .env.sample .env   # point DUCKDB_PATH at a built claimwise/dbt-pipeline/rcm.duckdb
 ```
 
-`make smoke` needs nothing but a built DuckDB file — no AWS, no Bedrock. It
-proves the read-only guard, the metric allowlist, and every `mtr_*` table
-actually resolve.
+| I want to… | Run this |
+|---|---|
+| Try it with zero AWS cost | `make setup && make smoke` — [Getting Started](docs/getting-started.md) |
+| Chat with the full crew | `make run` — [Commands](docs/commands.md) |
+| Talk to one specialist directly | `make run AGENT=investigator` (or `analyst` / `advisor` / `steward`) |
+| Run the deterministic eval suite | `make eval` — 19 questions checked against live values |
+| Serve it over HTTP like AgentCore Runtime would | `PORT=18080 make runtime-dev` — [Deployment](docs/deployment.md) |
+| See every prompt and tool call | Set up tracing — [Observability](docs/observability.md) |
+| Understand the agent design | [The Agents](docs/the-agents.md) |
 
-Talking to the agent needs an AWS account with Bedrock model access:
+## Documentation
 
-```bash
-aws sso login          # or however you authenticate
-# set BEDROCK_MODEL_ID in .env to a Claude model id you have access to
-make run                        # chat with the Supervisor — the full crew (default)
-make run AGENT=analyst          # or talk to one specialist directly:
-make run AGENT=investigator     #   analyst | investigator | advisor | steward
-make run AGENT=advisor
-make run AGENT=steward
-make eval                       # 19 questions (golden + claim + routing), checked against live values
-```
+The wiki lives in [docs/](docs/) and is published at
+<https://senthilsweb.github.io/claimwise-agents/>:
 
-To try the same Supervisor over HTTP the way AgentCore Runtime would call it:
+- [Home](docs/index.md) — how the pieces fit
+- [Getting Started](docs/getting-started.md) — two 5-minute paths in
+- [Configuration](docs/configuration.md) — every environment variable
+- [The Agents](docs/the-agents.md) — the bounded-context design, one agent at a time
+- [Commands](docs/commands.md) — every `make` target
+- [Observability](docs/observability.md) — LangSmith, Arize AX, and OpenObserve, all optional
+- [Deployment](docs/deployment.md) — the AgentCore Runtime, local and (paused) cloud
+- [Runbook](docs/runbook.md) — what runs automatically, what has cost or risk, real failures and fixes
+- [FAQ](docs/faq.md)
 
-```bash
-PORT=18080 make runtime-dev     # serves agents/runtime.py locally
-curl -s localhost:18080/invocations -H 'Content-Type: application/json' \
-  -d '{"prompt": "What is our overall denial rate?"}'
-```
-
-## Observability
-
-All optional, all off by default, and freely combinable — every configured
-backend gets the full trace. Set any of these in `.env` and `make run` /
-`make eval` export every prompt, every tool call with its inputs and
-outputs, and every model response to it via OpenTelemetry:
-
-- `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY` → [LangSmith](https://smith.langchain.com)
-- `ARIZE_SPACE_ID` + `ARIZE_API_KEY` → [Arize AX](https://app.arize.com)
-- `OTEL_EXPORTER_OTLP_ENDPOINT` + `OTEL_EXPORTER_OTLP_HEADERS` → any generic OTLP/HTTP collector (e.g. a home-lab OpenObserve instance)
-
-`agents/telemetry.py` wires it up; no code changes needed to turn any of
-these on or off. Content is unredacted by default (see the module's
-docstring for the one env var that would turn redaction on).
-
-## Structure
+## Layout
 
 ```
-openspec/           specs and change proposals (start here — the intent lives here)
-agents/
-  config.py           env-driven settings
-  data.py             read-only adapter (DuckDB/Databricks), enforces the trust boundary
-  sqlutil.py          shared SQL-literal-escaping helper
-  glossary.py         the shared business glossary — one definition per term
-  models.py           Bedrock model factory
-  telemetry.py        LangSmith / Arize AX / generic OTLP export
-  cli.py              local chat entrypoint (make run, make run AGENT=<name>)
-  runtime.py          AgentCore Runtime HTTP entrypoint (make runtime-dev)
-  tools/
-    metrics.py        query_metric / explain_metric — the metrics allowlist
-    billing.py        get_claim_story / list_claims — Claim owns activities + collections
-    advisor.py         payer_scorecard / ar_aging / appeal_outcomes — portfolio view
-    steward.py          run_dq_checks / get_lineage / glossary_lookup — governance
-  contexts/            one file per bounded-context agent, plus supervisor.py
-                        (agents-as-tools; the system prompt's context map is the routing table)
-  eval/                tool_smoke (no LLM, 31 checks) + golden/claim/routing evals (needs Bedrock)
+openspec/           specs and change proposals — the intent lives here
+agents/              the Python package
+  contexts/           one file per bounded-context agent, plus the Supervisor
+  tools/              the tools each agent is allowed to call
+  eval/               tool_smoke (no LLM) + golden/claim/routing evals
+  runtime.py          the AgentCore Runtime HTTP entrypoint
+  cli.py              the local chat entrypoint
+docs/                the wiki (this README is only the front door)
 ```
 
-Work follows AI-DLC: **Intent → Execution → Operations**. The intent for the first release is documented in [`openspec/changes/claimwise-revenue-copilot/`](openspec/changes/claimwise-revenue-copilot/).
+Work follows AI-DLC: **Intent → Execution → Operations**. The intent for
+the first release is documented in
+[`openspec/changes/claimwise-revenue-copilot/`](openspec/changes/claimwise-revenue-copilot/).
 
 ## Related
 
