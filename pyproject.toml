@@ -15,6 +15,11 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.27.0",
     "bedrock-agentcore>=1.19.0",
     "bedrock-agentcore-starter-toolkit>=0.3.11",
+    # numpy is a transitive dep via databricks-sql-connector -> pandas.
+    # Pinned below 2.5 -- 2.5.x is too new to have a published aarch64
+    # manylinux wheel yet, which breaks AgentCore's direct_code_deploy
+    # cross-compile packaging (it refuses to build from source).
+    "numpy<2.5",
 ]
 
 [tool.uv]

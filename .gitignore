@@ -23,6 +23,7 @@ venv/
 dist/
 build/
 .bedrock_agentcore.yaml
+.bedrock_agentcore/
 
 # mkdocs build output (published by CI, never committed)
 site/
