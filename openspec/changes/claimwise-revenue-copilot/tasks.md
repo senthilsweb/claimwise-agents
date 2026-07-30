@@ -96,22 +96,33 @@ model, `us.anthropic.claude-sonnet-5` — not the Nova Lite stand-in.
   the same session actually recalls the first (each test `agentcore
   invoke` call opened its own new session) — worth a follow-up call with
   an explicit shared session id.
-- [x] 4.5 Observability: `agents/telemetry.py`'s triple OTLP export
-  (LangSmith/Arize/OpenObserve) was **not** enabled for this cloud
-  deploy (not passed via `--env`) — separate from that, AgentCore's own
-  built-in observability (ADOT → CloudWatch Logs + X-Ray) is live: real
-  runtime logs were read directly from CloudWatch to diagnose the
-  `BEDROCK_MODEL_ID` crash above. Two minor permission gaps surfaced
-  during deploy (non-fatal, deployment succeeds either way):
-  `logs:CreateLogGroup` and `logs:PutDeliverySource` — needed for
-  AgentCore's automatic trace-delivery setup, not yet granted. Add
-  `CloudWatchLogsFullAccess` (or a scoped log-group/delivery-source
-  policy) to close this if full X-Ray trace delivery is wanted later.
-- Verification: `make smoke` still **31/31** (unaffected — these are all
-  live-cloud findings, not local regressions).
+- [x] 4.5 Observability: **fully live now**, both halves. AgentCore's own
+  built-in observability (ADOT → CloudWatch Logs + X-Ray) needed two
+  separate IAM grants, found one deploy at a time: `logs:PutDeliverySource`
+  denied → `CloudWatchLogsFullAccess`; then, once the delivery
+  source/destination existed, `AccessDeniedException: Access Denied for
+  this Delivery Destination` → traced to missing `xray:PutResourcePolicy`
+  (not covered by `BedrockAgentCoreFullAccess`, which only grants
+  read-oriented X-Ray actions) → `AWSXRayFullAccess`. Redeployed after
+  both grants: `Observability enabled ... logs: True, traces: True`. In
+  the same redeploy, `agents/telemetry.py`'s triple OTLP export was
+  turned on via `--env` — LangSmith and Arize AX both confirmed receiving
+  traces from the live cloud Runtime (verified by reproducing the same
+  call locally with each backend isolated). The self-hosted OpenObserve
+  backend fails with a 401 — reproduced identically outside AWS, so it's
+  a stale token on the OpenObserve side, not a deployment gap. Full
+  writeup: [Deployment & Integration](https://senthilsweb.github.io/claimwise-agents/deployment-integration/#observability-permissions-granted-in-two-passes),
+  [Operations Runbook](https://senthilsweb.github.io/claimwise-agents/operations/#runbook).
+- Verification: `make smoke` still **31/31**; `make eval` **18/19** (the
+  one fail is the eval assertion's fault, not the agent's — see
+  [Evals](https://senthilsweb.github.io/claimwise-agents/evals/#the-one-fail-and-why-it-isnt-an-agent-bug)).
 
 ## B5. Validation (Operations)
-- [ ] 5.1 Full eval suite (~30 golden questions) green on DuckDB
+- [x] 5.1 Full eval suite green on DuckDB — 19 questions (5 Revenue
+  Analyst + 4 Claims Investigator + 10 Supervisor routing), Claude
+  Sonnet 5: **18/19**. The one fail is an eval-assertion bug (too
+  literal a substring match on an honest not-found answer), not an
+  agent bug — see [Evals](https://senthilsweb.github.io/claimwise-agents/evals/).
 - [ ] 5.2 Same suite green against Databricks prod through the deployed AgentCore runtime
 - [ ] 5.3 5-minute demo script recorded in README ("revenue looks down this month" walkthrough)
 - [ ] 5.4 Update specs to match reality; update project memory

@@ -21,10 +21,17 @@ for a full runnable walkthrough.
 **AWS AgentCore Runtime — live.** The same Runtime is deployed to Amazon
 Bedrock AgentCore's managed cloud service. Deploying it needed IAM
 permissions beyond this project's original Bedrock-model-invoke-only
-scope — `IAMFullAccess` (the toolkit creates the Runtime's execution role
-on your behalf), `BedrockAgentCoreFullAccess` (the control plane), and
-`AmazonS3FullAccess` (the deployment artifact bucket, for
-`direct_code_deploy` — no Docker needed):
+scope — all attached directly to the `claimwise-agents` IAM user as
+AWS-managed policies:
+
+| Policy | Why |
+|---|---|
+| `IAMFullAccess` | The toolkit creates the Runtime's execution role on your behalf |
+| `BedrockAgentCoreFullAccess` | The control plane — Runtime, Memory, Gateway |
+| `AmazonS3FullAccess` | The deployment artifact bucket, for `direct_code_deploy` (no Docker) |
+| `AmazonBedrockAgentCoreMemoryBedrockModelInferenceExecutionRolePolicy` | Memory's own model-inference execution role |
+| `CloudWatchLogsFullAccess` | Auto-creating the Runtime/Memory log groups and the CloudWatch Logs *Delivery* pipeline (source → destination → delivery) that carries traces out |
+| `AWSXRayFullAccess` | Specifically `xray:PutResourcePolicy` — without it, the delivery destination exists but AWS can't grant it permission to actually receive traces |
 
 ```bash
 export AWS_PROFILE=claimwise AWS_REGION=us-east-2 AGENTCORE_SUPPRESS_RECOMMENDATION=1
@@ -32,12 +39,15 @@ export AWS_PROFILE=claimwise AWS_REGION=us-east-2 AGENTCORE_SUPPRESS_RECOMMENDAT
 agentcore configure --entrypoint agents/runtime.py --name claimwise_supervisor \
   --region us-east-2 --non-interactive
 
-agentcore deploy --agent claimwise_supervisor \
+agentcore deploy --agent claimwise_supervisor --auto-update-on-conflict \
   --env "AGENT_TARGET=databricks" \
   --env "BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-5" \
   --env "AWS_REGION=us-east-2" \
   --env "DATABRICKS_HOST=..." --env "DATABRICKS_HTTP_PATH=..." \
-  --env "DATABRICKS_TOKEN=..." --env "DATABRICKS_CATALOG=workspace"
+  --env "DATABRICKS_TOKEN=..." --env "DATABRICKS_CATALOG=workspace" \
+  --env "LANGSMITH_TRACING=true" --env "LANGSMITH_API_KEY=..." --env "LANGSMITH_PROJECT=..." \
+  --env "ARIZE_SPACE_ID=..." --env "ARIZE_API_KEY=..." --env "ARIZE_PROJECT_NAME=..." \
+  --env "OTEL_EXPORTER_OTLP_ENDPOINT=..." --env "OTEL_EXPORTER_OTLP_HEADERS=..."
 ```
 
 `DUCKDB_PATH` is a local file path — meaningless on the cloud runtime, so
@@ -45,12 +55,47 @@ the live deployment always targets Databricks, never DuckDB. Full
 worked examples against the live endpoint (`agentcore invoke`) are in
 [Examples](examples.md).
 
-Two real problems hit during this deploy, both fixed — see
+Three real problems hit during this deploy, all fixed — see
 [Operations](operations.md#runbook) for the full story: a `numpy`
 version pinned too new to have a published ARM64 wheel (packaging
-failure), and forgetting `--env` on the first deploy (the Runtime
-crashed on a missing `BEDROCK_MODEL_ID`, surfaced by `agentcore invoke`
-as a generic timeout — the real cause only showed up in CloudWatch logs).
+failure), forgetting `--env` on the first deploy (the Runtime crashed on
+a missing `BEDROCK_MODEL_ID`, surfaced by `agentcore invoke` as a
+generic timeout — the real cause only showed up in CloudWatch logs), and
+the CloudWatch/X-Ray permission gap below.
+
+### Observability permissions, granted in two passes
+
+The first live deploy succeeded at the Runtime/Memory level but AWS
+Bedrock AgentCore's own "Enabling observability..." step failed twice,
+for two genuinely different reasons — each needed its own IAM policy,
+granted through the AWS Console (**IAM → Users → claimwise-agents → Add
+permissions → Attach policies directly**):
+
+**Pass 1 — `CloudWatchLogsFullAccess`.** The first deploy's own log
+group creation and the CloudWatch Logs *Delivery* API (`PutDeliverySource`,
+which sets up the pipeline that carries Runtime traces out) were both
+denied — the user had no `logs:*` permissions at all yet.
+
+![IAM permissions after granting CloudWatchLogsFullAccess](assets/screenshots/iam-permissions-cloudwatch-logs.png)
+
+**Pass 2 — `AWSXRayFullAccess`.** Redeploying with `CloudWatchLogsFullAccess`
+attached got further — the delivery source and destination both got
+created — but the deploy still failed at the last step: `AccessDeniedException:
+Access Denied for this Delivery Destination`. The actual cause: AWS
+auto-creates the resource policy that lets a Delivery Destination *receive*
+traces only when the caller also has `xray:PutResourcePolicy` and
+`xray:ListResourcePolicies` — permissions `BedrockAgentCoreFullAccess`
+does not include (it only grants read-oriented X-Ray actions). Attaching
+`AWSXRayFullAccess` fixed it.
+
+![IAM permissions after granting AWSXRayFullAccess](assets/screenshots/iam-permissions-xray.png)
+
+Redeploying after Pass 2 logged `Observability enabled for
+runtime/claimwise_supervisor-lmETE5GGLM - logs: True, traces: True` —
+both the GenAI Observability Dashboard (CloudWatch/X-Ray) and this
+project's own LangSmith/Arize AX/OTLP tracing (see
+[Operations](operations.md#tracing)) are now live on the cloud Runtime,
+not just locally.
 
 **Docker, AWS Lambda, Kubernetes:** not part of this project's deployment
 story — AgentCore Runtime is the only cloud target designed for.

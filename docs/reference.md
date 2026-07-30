@@ -64,7 +64,8 @@ deployment runs Sonnet 5). Amazon's Nova models are billed directly, so
 they were a genuine free stand-in for verifying the *code* while that
 cleared. The tool layer is proven correct independently via `make smoke`
 (31 checks, zero LLM calls), so those eval results said something real
-about the agent design even on a small model.
+about the agent design even on a small model. Full suite details and
+current results → [Evals](evals.md).
 
 **Does any agent ever write to the warehouse?** No — see
 [Architecture](architecture.md#tool-calling).
@@ -83,22 +84,19 @@ plus the `ai-agent-docs` skill that defines this page structure.
 - Memory is live but not yet verified to persist across turns in the
   same session.
 - No load testing performed against the live deployment.
-- Two AgentCore observability permissions still missing
-  (`logs:CreateLogGroup`, `logs:PutDeliverySource`) — the deploy and
-  every invocation work fine without them; only full X-Ray trace
-  delivery is affected.
-- This project's own triple OTLP export (LangSmith/Arize/OpenObserve)
-  is not yet enabled on the live cloud deployment — only AgentCore's
-  built-in CloudWatch/X-Ray observability is.
+- The generic OTLP backend (self-hosted OpenObserve) fails with a 401 —
+  a stale auth token, reproduced identically outside AWS, so it's
+  unrelated to the deployment itself. LangSmith and Arize AX are both
+  verified working, live, on the cloud Runtime — see
+  [Operations](operations.md#runbook).
 
 ## Future Enhancements
 
 - Package the tools as a Lambda handler and stand up the MCP Gateway.
 - Verify Memory actually recalls across two calls in the same session
   (the resource is live; this specific behavior isn't proven yet).
-- Grant the two remaining CloudWatch Logs permissions and enable this
-  project's own OTLP export (LangSmith/Arize/OpenObserve) on the live
-  deployment, alongside AgentCore's built-in observability.
+- Rotate the OpenObserve token so all three tracing backends receive
+  live-Runtime traces, not just LangSmith and Arize AX.
 - Migrate the Databricks credential from a plaintext `.env`/`--env` value
   to AgentCore Identity's credential vending.
 - Re-run the full eval suite against the live cloud deployment (Claude

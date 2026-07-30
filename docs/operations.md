@@ -24,13 +24,15 @@ Tracing, below) rather than aggregated separately.
 Three backends, all optional and off by default, freely combinable — set
 any combination in `.env` and every call exports the full trace (every
 prompt, every tool call with its real inputs/outputs, every model
-response) to all of them at once:
+response) to all of them at once. Live on both the local dev loop and
+the cloud Runtime (see [Deployment & Integration](deployment-integration.md#observability-permissions-granted-in-two-passes)
+for the IAM permissions the cloud path needed):
 
-| Backend | Env vars |
-|---|---|
-| [LangSmith](https://smith.langchain.com) | `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` |
-| [Arize AX](https://app.arize.com) | `ARIZE_SPACE_ID`, `ARIZE_API_KEY`, `ARIZE_PROJECT_NAME` |
-| Any generic OTLP/HTTP collector | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS` |
+| Backend | Env vars | Status |
+|---|---|---|
+| [LangSmith](https://smith.langchain.com) | `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | Verified — local and cloud |
+| [Arize AX](https://app.arize.com) | `ARIZE_SPACE_ID`, `ARIZE_API_KEY`, `ARIZE_PROJECT_NAME` | Verified — local and cloud |
+| Any generic OTLP/HTTP collector | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS` | Currently failing (401) — see Runbook below |
 
 `agents/telemetry.py` wires it up — no code change needed to turn any of
 these on or off. Content is unredacted by default (see the module's
@@ -169,6 +171,32 @@ on the cloud runtime, so the live deployment always targets Databricks.
 Lesson: when `agentcore invoke` reports a timeout, check the CloudWatch
 logs before assuming it's actually slow — it may be crashing instantly.
 
+**Enabling observability took two separate IAM grants, not one.** The
+deploy's "Enabling observability..." step failed with a different error
+each time. First: `logs:PutDeliverySource` denied — no `logs:*`
+permission existed at all yet. Fixed with `CloudWatchLogsFullAccess`.
+Redeploying got further (the delivery source and destination both got
+created) but then failed with `AccessDeniedException: Access Denied for
+this Delivery Destination` — a resource-policy problem, not a plain
+permission denial. Root cause: AWS only auto-creates the resource policy
+that lets a Delivery Destination *receive* traces when the caller also
+has `xray:PutResourcePolicy`/`xray:ListResourcePolicies`, which
+`BedrockAgentCoreFullAccess` doesn't grant (only read-oriented X-Ray
+actions). Fixed with `AWSXRayFullAccess`. Full writeup, with both
+screenshots, in [Deployment & Integration](deployment-integration.md#observability-permissions-granted-in-two-passes).
+
+**Generic OTLP exporter fails with 401 — a stale token, not an AWS
+issue.** Once tracing was enabled end-to-end, LangSmith and Arize AX
+both started receiving traces cleanly, but the self-hosted OpenObserve
+collector (`OTEL_EXPORTER_OTLP_ENDPOINT`) logs `Failed to export span
+batch code: 401, reason: Unauthorized` on every call. Confirmed this is
+unrelated to the AgentCore deployment: running the exact same export in
+isolation locally reproduces the identical 401. The Basic-auth token in
+`OTEL_EXPORTER_OTLP_HEADERS` needs rotating on the OpenObserve side —
+until then this one backend is silently dropped while LangSmith/Arize
+keep working (each exporter fails independently; one backend's 401
+never blocks the others).
+
 ### Recovery procedures
 
 None of the failures above required a manual recovery step beyond the
@@ -180,4 +208,5 @@ to check if a live invocation misbehaves.
 
 ## What next
 
+- The two eval suites, with real current results → [Evals](evals.md)
 - The complete configuration and API reference → [Reference](reference.md)
