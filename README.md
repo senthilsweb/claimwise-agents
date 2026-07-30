@@ -27,27 +27,25 @@ cp .env.sample .env   # point DUCKDB_PATH at a built claimwise/dbt-pipeline/rcm.
 | I want to… | Run this |
 |---|---|
 | Try it with zero AWS cost | `make setup && make smoke` — [Getting Started](docs/getting-started.md) |
-| Chat with the full crew | `make run` — [Commands](docs/commands.md) |
+| Chat with the full crew | `make run` — [Deployment & Integration](docs/deployment-integration.md) |
 | Talk to one specialist directly | `make run AGENT=investigator` (or `analyst` / `advisor` / `steward`) |
 | Run the deterministic eval suite | `make eval` — 19 questions checked against live values |
-| Serve it over HTTP like AgentCore Runtime would | `PORT=18080 make runtime-dev` — [Deployment](docs/deployment.md) |
-| See every prompt and tool call | Set up tracing — [Observability](docs/observability.md) |
-| Understand the agent design | [The Agents](docs/the-agents.md) |
+| Serve it over HTTP like AgentCore Runtime would | `PORT=18080 make runtime-dev` — [Deployment & Integration](docs/deployment-integration.md) |
+| See every prompt and tool call | Set up tracing — [Operations](docs/operations.md) |
+| Understand the agent design | [Architecture](docs/architecture.md) |
 
 ## Documentation
 
 The wiki lives in [docs/](docs/) and is published at
-<https://senthilsweb.github.io/claimwise-agents/>:
+<https://senthilsweb.github.io/claimwise-agents/> — following the
+`ai-agent-docs` skill's six-section standard:
 
-- [Home](docs/index.md) — how the pieces fit
+- [Overview](docs/index.md) — what it is, why it exists, the bounded context
 - [Getting Started](docs/getting-started.md) — two 5-minute paths in
-- [Configuration](docs/configuration.md) — every environment variable
-- [The Agents](docs/the-agents.md) — the bounded-context design, one agent at a time
-- [Commands](docs/commands.md) — every `make` target
-- [Observability](docs/observability.md) — LangSmith, Arize AX, and OpenObserve, all optional
-- [Deployment](docs/deployment.md) — the AgentCore Runtime, local and (paused) cloud
-- [Runbook](docs/runbook.md) — what runs automatically, what has cost or risk, real failures and fixes
-- [FAQ](docs/faq.md)
+- [Architecture](docs/architecture.md) — the bounded-context design, agent flow, memory, security
+- [Deployment & Integration](docs/deployment-integration.md) — configuration, running it, REST/MCP/SDK/CLI
+- [Operations](docs/operations.md) — tracing, cost, and every real failure with its fix
+- [Reference](docs/reference.md) — every env var, the API shape, error codes, FAQ
 
 ## Layout
 

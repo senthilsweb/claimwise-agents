@@ -1,58 +1,73 @@
-# Claimwise Agents
+# Overview
 
-**Claimwise Revenue Copilot** is a multi-agent showcase built with the
-[Strands Agents](https://strandsagents.com) SDK and deployed on
-[Amazon Bedrock AgentCore](https://aws.amazon.com/bedrock/agentcore/). It
-reads the gold layer of [Claimwise](https://github.com/senthilsweb/claimwise),
-a healthcare billing (revenue cycle management) dbt pipeline, and answers
-business questions in plain English.
+## Purpose
 
-Claimwise's gold layer is already organized as **bounded contexts** —
-`clinical`, `billing`, `admin` — with a metric layer where every KPI is
-defined once. This project turns that design into running code: **one
-agent per bounded context**, plus a Supervisor that routes each question
-to the specialist who owns it and composes the answer.
+Healthcare billing teams answer the same kind of question over and over —
+"what's our denial rate," "why is this claim unpaid," "which payer is
+hurting us" — by asking an analyst to write SQL against the warehouse.
+**Claimwise Revenue Copilot** answers those questions directly, in plain
+English, by reading the [Claimwise](https://github.com/senthilsweb/claimwise)
+dbt pipeline's gold layer — the same clean, tested tables that already
+feed the [Revenue Pulse dashboard](https://github.com/senthilsweb/claimwise/tree/main/dashboards).
 
-```mermaid
-flowchart LR
-    U[Your question] --> S[Supervisor]
-    S --> A[Revenue Analyst<br/>gold/metrics]
-    S --> I[Claims Investigator<br/>gold/billing]
-    S --> D[Denials & AR Advisor<br/>gold/billing]
-    S --> W[Data Steward<br/>governance]
-```
+The design choice this project exists to demonstrate: Claimwise's gold
+layer is already organized as **bounded contexts** (a Domain-Driven Design
+idea) — `clinical`, `billing`, `admin`, with a `metrics` layer where every
+KPI is defined once. Instead of one agent with every tool, this project
+gives **each bounded context its own agent**, with its own vocabulary and
+its own tools, plus a Supervisor that routes each question to whichever
+specialist owns it.
 
-## I want to… → run this
+## Use Cases
 
-| I want to… | Run this |
+- *"What is our overall denial rate?"* — a company-wide KPI, answered from
+  the published metric layer.
+- *"Why is claim CLM48516149 still unpaid?"* — a single claim's real
+  history, narrated in the order it actually happened.
+- *"Which payer is hurting us? Are appeals worth the effort?"* — a
+  portfolio-level pattern across many claims and payers.
+- *"Can I trust today's numbers?"* — a live answer, backed by actually
+  running the pipeline's data-quality tests, not a guess.
+
+## Capabilities
+
+- Answers KPI, single-claim, and portfolio-level billing questions from
+  real gold-layer data — every number traceable to the table it came from.
+- Routes a question to the right specialist automatically (the
+  Supervisor), and composes an answer when a question needs more than one.
+- Runs identically against DuckDB (local, zero infra) or Databricks
+  (production warehouse) — the same tools, same SQL, same rules.
+- Exports full traces (every prompt, every tool call, every response) to
+  any combination of LangSmith, Arize AX, and a generic OTLP collector.
+
+## Limitations
+
+- **Read-only.** No agent can write to the warehouse — there is no code
+  path for it, not just a prompt instruction. See [Architecture](architecture.md).
+- **No live cloud deployment yet.** The AgentCore Runtime is built and
+  verified locally over real HTTP, but deploying it to AWS's managed
+  runtime is currently paused — see [Deployment & Integration](deployment-integration.md).
+- **No MCP Gateway yet.** Exposing the tools as MCP targets needs a
+  Lambda-packaging step this project hasn't built — see
+  [Deployment & Integration](deployment-integration.md).
+- **Memory is code-ready but untested** — it needs a live AgentCore
+  Memory resource this account can't create yet.
+- Tested primarily against `amazon.nova-lite-v1:0` while Claude Sonnet 5
+  access was blocked by an unrelated AWS billing issue — see
+  [Reference](reference.md#faq) for why that doesn't invalidate the
+  results.
+
+## Bounded Context
+
+| | |
 |---|---|
-| Try it with zero AWS cost | `make smoke` — see [Getting Started](getting-started.md) |
-| Chat with the full crew | `make run` — see [Commands](commands.md) |
-| See every prompt and tool call | Set up tracing — see [Observability](observability.md) |
-| Understand the agent design | [The Agents](the-agents.md) |
-| Run it as an HTTP service | [Deployment](deployment.md) |
-| Fix something that broke | [Runbook](runbook.md) |
+| **Responsibilities** | Answer billing/KPI/claim questions in plain English, read-only, from the Claimwise gold layer |
+| **Upstream systems** | The Claimwise dbt pipeline (bronze → silver → gold), and its published `mtr_*` metric layer |
+| **Downstream systems** | None yet — this is a conversational surface, not (yet) feeding another system |
+| **Collaborating agents** | Internally: Revenue Analyst, Claims Investigator, Denials & AR Advisor, Data Steward, coordinated by one Supervisor |
+| **External services** | Amazon Bedrock (models); optionally LangSmith, Arize AX, or any OTLP collector for tracing |
 
-## Documentation
+## What next
 
-- [Getting Started](getting-started.md) — clone it, run it, in under 5 minutes
-- [Configuration](configuration.md) — every environment variable
-- [The Agents](the-agents.md) — the bounded-context design, one agent at a time
-- [Commands](commands.md) — every `make` target
-- [Observability](observability.md) — LangSmith, Arize AX, and OpenObserve, all optional
-- [Deployment](deployment.md) — the AgentCore Runtime, local and (paused) cloud
-- [Runbook](runbook.md) — what runs automatically, what has cost or risk, and failures seen so far
-- [FAQ](faq.md)
-
-## Layout
-
-```
-openspec/           specs and change proposals — the intent lives here
-agents/              the Python package
-  contexts/           one file per bounded-context agent, plus the Supervisor
-  tools/              the tools each agent is allowed to call
-  eval/               tool_smoke (no LLM) + golden/claim/routing evals
-  runtime.py          the AgentCore Runtime HTTP entrypoint
-  cli.py              the local chat entrypoint
-docs/                this site
-```
+- Run it yourself, free, in a few minutes → [Getting Started](getting-started.md)
+- How the five agents actually work → [Architecture](architecture.md)
