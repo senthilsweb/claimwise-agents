@@ -28,13 +28,14 @@ Claimwise Revenue Copilot — multi-agent showcase on Strands Agents + Amazon Be
 
 ## Docs
 
-Content structure follows the **`ai-agent-docs`** skill — six sections
-(Overview, Getting Started, Architecture, Deployment & Integration,
-Operations, Reference), framework-agnostic. This is the standard for
-**any agent repo we build**, not specific to this one. Publishing
-mechanics (MkDocs Material, GitHub Pages, the workflow) follow the
-**`mkdocs-site`** skill, per the usual convention. Use both together
-when writing or reorganizing docs for an agent project.
+Content structure follows the **`ai-agent-docs`** skill — Overview,
+Getting Started, Architecture, Configuration, Examples, Deployment &
+Integration, Operations, Reference (Configuration/Examples promoted to
+their own pages once there's enough real content), framework-agnostic.
+This is the standard for **any agent repo we build**, not specific to
+this one. Publishing mechanics (MkDocs Material, GitHub Pages, the
+workflow) follow the **`mkdocs-site`** skill, per the usual convention.
+Use both together when writing or reorganizing docs for an agent project.
 
 Every command, every env var, and the full agent design are in the
 published wiki (`docs/`, built by `mkdocs`) — see

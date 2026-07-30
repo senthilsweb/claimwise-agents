@@ -1,6 +1,6 @@
 # Wiki site, published to GitHub Pages by .github/workflows/docs.yml.
-# Publishing mechanics: the mkdocs-site skill. Content structure (these six
-# sections): the ai-agent-docs skill — the standard for any agent repo.
+# Publishing mechanics: the mkdocs-site skill. Content structure (these
+# pages): the ai-agent-docs skill — the standard for any agent repo.
 # Writing standard: https://senthilsweb.github.io/ai-agents/style-guide/
 site_name: claimwise-agents
 site_url: https://senthilsweb.github.io/claimwise-agents/
@@ -36,6 +36,8 @@ nav:
   - Overview: index.md
   - Getting Started: getting-started.md
   - Architecture: architecture.md
+  - Configuration: configuration.md
+  - Examples: examples.md
   - Deployment & Integration: deployment-integration.md
   - Operations: operations.md
   - Reference: reference.md

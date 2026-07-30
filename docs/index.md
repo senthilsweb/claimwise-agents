@@ -2,9 +2,13 @@
 
 ## Purpose
 
-Healthcare billing teams answer the same kind of question over and over —
-"what's our denial rate," "why is this claim unpaid," "which payer is
-hurting us" — by asking an analyst to write SQL against the warehouse.
+Healthcare billing teams ask an analyst to write SQL every time they need
+an answer to a question like:
+
+- "What's our denial rate?"
+- "Why is this claim unpaid?"
+- "Which payer is hurting us?"
+
 **Claimwise Revenue Copilot** answers those questions directly, in plain
 English, by reading the [Claimwise](https://github.com/senthilsweb/claimwise)
 dbt pipeline's gold layer — the same clean, tested tables that already
@@ -12,11 +16,16 @@ feed the [Revenue Pulse dashboard](https://github.com/senthilsweb/claimwise/tree
 
 The design choice this project exists to demonstrate: Claimwise's gold
 layer is already organized as **bounded contexts** (a Domain-Driven Design
-idea) — `clinical`, `billing`, `admin`, with a `metrics` layer where every
-KPI is defined once. Instead of one agent with every tool, this project
-gives **each bounded context its own agent**, with its own vocabulary and
-its own tools, plus a Supervisor that routes each question to whichever
-specialist owns it.
+idea) —
+
+- `clinical`
+- `billing`
+- `admin`
+- `metrics` — where every KPI is defined once
+
+Instead of one agent with every tool, this project gives **each bounded
+context its own agent**, with its own vocabulary and its own tools, plus
+a Supervisor that routes each question to whichever specialist owns it.
 
 ## Use Cases
 

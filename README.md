@@ -27,10 +27,10 @@ cp .env.sample .env   # point DUCKDB_PATH at a built claimwise/dbt-pipeline/rcm.
 | I want to… | Run this |
 |---|---|
 | Try it with zero AWS cost | `make setup && make smoke` — [Getting Started](docs/getting-started.md) |
-| Chat with the full crew | `make run` — [Deployment & Integration](docs/deployment-integration.md) |
+| Chat with the full crew | `make run` — [Examples](docs/examples.md) |
 | Talk to one specialist directly | `make run AGENT=investigator` (or `analyst` / `advisor` / `steward`) |
 | Run the deterministic eval suite | `make eval` — 19 questions checked against live values |
-| Serve it over HTTP like AgentCore Runtime would | `PORT=18080 make runtime-dev` — [Deployment & Integration](docs/deployment-integration.md) |
+| Serve it over HTTP like AgentCore Runtime would | `PORT=18080 make runtime-dev` — [Examples](docs/examples.md) |
 | See every prompt and tool call | Set up tracing — [Operations](docs/operations.md) |
 | Understand the agent design | [Architecture](docs/architecture.md) |
 
@@ -38,14 +38,16 @@ cp .env.sample .env   # point DUCKDB_PATH at a built claimwise/dbt-pipeline/rcm.
 
 The wiki lives in [docs/](docs/) and is published at
 <https://senthilsweb.github.io/claimwise-agents/> — following the
-`ai-agent-docs` skill's six-section standard:
+`ai-agent-docs` skill's standard:
 
 - [Overview](docs/index.md) — what it is, why it exists, the bounded context
 - [Getting Started](docs/getting-started.md) — two 5-minute paths in
 - [Architecture](docs/architecture.md) — the bounded-context design, agent flow, memory, security
-- [Deployment & Integration](docs/deployment-integration.md) — configuration, running it, REST/MCP/SDK/CLI
+- [Configuration](docs/configuration.md) — every environment variable
+- [Examples](docs/examples.md) — every way to call the agents, with real output
+- [Deployment & Integration](docs/deployment-integration.md) — running it locally and (paused) in the cloud
 - [Operations](docs/operations.md) — tracing, cost, and every real failure with its fix
-- [Reference](docs/reference.md) — every env var, the API shape, error codes, FAQ
+- [Reference](docs/reference.md) — the API schema, error codes, FAQ
 
 ## Layout
 

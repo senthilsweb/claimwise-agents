@@ -1,73 +1,29 @@
 # Reference
 
-At the end you will have the complete technical detail: every
-configuration variable, the API shape, error codes, and answers to the
-questions most likely to come up.
+At the end you will have the complete technical detail: the API schema,
+error codes, and answers to the questions most likely to come up.
 
-## Configuration Reference
-
-### Model (Amazon Bedrock)
-
-| Variable | Required | Meaning |
-|---|---|---|
-| `AWS_REGION` | yes | Region your Bedrock model access is in. |
-| `AWS_PROFILE` | one of these two | A named AWS CLI profile — boto3's normal credential chain. |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | one of these two | Raw keys, if you prefer them over a profile. boto3 picks these up automatically once set. |
-| `BEDROCK_MODEL_ID` | yes | The exact model or inference-profile ID to call. Never hardcoded anywhere in the code. |
-
-### Data target
-
-| Variable | Required | Meaning |
-|---|---|---|
-| `AGENT_TARGET` | yes | `duckdb` (dev, zero infra) or `databricks` (prod). |
-| `DUCKDB_PATH` | if `AGENT_TARGET=duckdb` | Path to the Claimwise repo's built `rcm.duckdb`. |
-| `CLAIMWISE_DBT_PATH` | Data Steward only | The Claimwise dbt-pipeline repo root — `run_dq_checks` runs `dbt test` there; `get_lineage` reads its `target/manifest.json`. |
-| `DATABRICKS_HOST` / `DATABRICKS_HTTP_PATH` / `DATABRICKS_TOKEN` | if `AGENT_TARGET=databricks` | Read-only warehouse credentials. |
-| `DATABRICKS_CATALOG` | if `AGENT_TARGET=databricks` | Defaults to `workspace`. |
-
-### Observability (all optional)
-
-| Variable | Meaning |
-|---|---|
-| `LANGSMITH_TRACING` | `true` to export traces to LangSmith. |
-| `LANGSMITH_API_KEY` / `LANGSMITH_PROJECT` | LangSmith project credentials. |
-| `ARIZE_SPACE_ID` / `ARIZE_API_KEY` / `ARIZE_PROJECT_NAME` | Arize AX credentials. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_HEADERS` | Any generic OTLP/HTTP collector. |
-
-### AgentCore Memory (optional, currently untested)
-
-| Variable | Meaning |
-|---|---|
-| `MEMORY_ID` | Blank by default — Memory stays fully disabled. |
-| `MEMORY_ACTOR_ID` | A placeholder actor identity (default `demo-user`). |
+For the full configuration variable table, see its own page:
+[Configuration](configuration.md). For a worked example of every call
+below with real output, see [Examples](examples.md).
 
 ## API Reference
 
+The schema only — see [Examples](examples.md#rest-api) for a worked
+call with real output.
+
 ### `GET /ping`
 
-```json
-{"status": "Healthy", "time_of_last_update": 1785368934}
-```
+Response: `{"status": "Healthy", "time_of_last_update": <unix timestamp>}`
 
 ### `POST /invocations`
 
-Request:
+Request: `{"prompt": "<question>"}`
 
-```json
-{"prompt": "What is our overall denial rate?"}
-```
-
-Response:
-
-```json
-{"result": "The overall denial rate is 14.62%, from the mtr_executive_summary table.\n"}
-```
+Response: `{"result": "<answer text>"}`
 
 Empty or missing `prompt` returns an error without calling the model:
-
-```json
-{"error": "payload must include a non-empty 'prompt' field"}
-```
+`{"error": "payload must include a non-empty 'prompt' field"}`
 
 ## MCP Tool Reference
 

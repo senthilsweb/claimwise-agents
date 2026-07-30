@@ -54,7 +54,7 @@ agent can write) all work — without a single model call.
 ## First Conversation
 
 Add Bedrock access (model ID, region, credentials — see
-[Configuration](deployment-integration.md#configuration)), then:
+[Configuration](configuration.md)), then:
 
 ```bash
 make run
@@ -72,5 +72,5 @@ The overall denial rate is 14.62%, from the mtr_executive_summary table.
 
 ## What next
 
-- Every environment variable, and how to call it over REST → [Deployment & Integration](deployment-integration.md)
 - What each agent actually does → [Architecture](architecture.md)
+- Every way to call the agents, with real output → [Examples](examples.md)
