@@ -33,11 +33,9 @@ flowchart LR
 
 The browser path needs the bridge because `InvokeAgentRuntime` requires
 SigV4-signed requests — AWS credentials never belong in a browser. The
-[`chat-adapter/`](https://github.com/senthilsweb/claimwise-agents/tree/main/chat-adapter)
-service translates the widget's REST/SSE contract into signed calls and is
-published as a public image
-(`ghcr.io/senthilsweb/claimwise-chat-adapter`) — see
-[Deployment & Integration](deployment-integration.md#browser-chat-widget).
+full client → adapter → runtime architecture (sequence diagram, contract
+translation, how other channels like Slack slot in) has its own page:
+[Chat Channel](chat-channel.md).
 
 ## Agent Flow
 

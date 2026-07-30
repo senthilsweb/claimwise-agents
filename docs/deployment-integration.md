@@ -109,7 +109,7 @@ Which method to reach for — every one has a full runnable example in
 |---|---|
 | CLI (`make run`) | Interactive local testing, one specialist or the full crew |
 | REST (`/invocations`) | Calling from anything that speaks HTTP, or once deployed to AgentCore Runtime |
-| Browser chat widget (`make chat`) | Conversing with the **deployed** agent from a web UI — see below |
+| Browser chat widget (`make chat`) | Conversing with the **deployed** agent from a web UI — see below and [Chat Channel](chat-channel.md) |
 | Python SDK | Embedding an agent directly in another Python process |
 | MCP | **Not built yet** — needs a Lambda-packaging step first, see below |
 | Event Driven (SQS/SNS/EventBridge/Kafka) | Not applicable — this project has no queue or event-bus trigger |

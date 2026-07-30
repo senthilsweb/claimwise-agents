@@ -36,6 +36,7 @@ nav:
   - Overview: index.md
   - Getting Started: getting-started.md
   - Architecture: architecture.md
+  - Chat Channel: chat-channel.md
   - Configuration: configuration.md
   - Examples: examples.md
   - Deployment & Integration: deployment-integration.md
