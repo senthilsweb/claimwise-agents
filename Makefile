@@ -1,4 +1,4 @@
-.PHONY: help setup run runtime-dev smoke eval clean
+.PHONY: help setup run runtime-dev smoke eval chat clean
 
 help:
 	@echo "Targets:"
@@ -16,6 +16,8 @@ help:
 	@echo "  smoke        - no-LLM check that the data adapter, tools, and the Runtime"
 	@echo "                 app itself all work"
 	@echo "  eval         - golden-question + routing eval against the full crew (needs Bedrock access)"
+	@echo "  chat         - browser chat widget against the DEPLOYED agent (docker compose;"
+	@echo "                 needs AGENT_RUNTIME_ARN in .env — see chat-adapter/README.md)"
 	@echo "  clean        - remove the virtualenv"
 
 setup:
@@ -34,6 +36,9 @@ smoke:
 
 eval:
 	uv run python -m agents.eval.run_eval
+
+chat:
+	docker compose up --build
 
 clean:
 	rm -rf .venv

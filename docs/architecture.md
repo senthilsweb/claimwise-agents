@@ -19,6 +19,26 @@ flowchart LR
     W --> P[dbt test / manifest.json]
 ```
 
+## Entry Points
+
+Every way a question reaches the Supervisor — same agent, different
+transport:
+
+```mermaid
+flowchart LR
+    CLI[CLI<br/>make run] --> S[Supervisor]
+    R[REST<br/>POST /invocations] --> S
+    WG[Browser widget<br/>mcp-chat-client] -->|REST/SSE| AD[chat-adapter<br/>FastAPI bridge] -->|InvokeAgentRuntime<br/>SigV4| RT[AgentCore Runtime] --> S
+```
+
+The browser path needs the bridge because `InvokeAgentRuntime` requires
+SigV4-signed requests — AWS credentials never belong in a browser. The
+[`chat-adapter/`](https://github.com/senthilsweb/claimwise-agents/tree/main/chat-adapter)
+service translates the widget's REST/SSE contract into signed calls and is
+published as a public image
+(`ghcr.io/senthilsweb/claimwise-chat-adapter`) — see
+[Deployment & Integration](deployment-integration.md#browser-chat-widget).
+
 ## Agent Flow
 
 ```
@@ -86,6 +106,11 @@ the vocabulary it owns — that section *is* the routing table.
 fresh on every tool call — by design, so memory never leaks into a
 bounded context that shouldn't have it (see the shared-Supervisor bug in
 [Operations](operations.md#runbook)).
+
+**Multi-turn from the browser widget:** needs no Memory at all — the
+widget resends its full transcript every turn and `chat-adapter` folds it
+into the prompt, so context travels with each request into the
+per-invocation fresh Supervisor.
 
 **Long-term (across separate invocations):** code-ready, not yet live.
 `agents/runtime.py` builds an `AgentCoreMemorySessionManager` keyed by the

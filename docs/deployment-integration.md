@@ -109,10 +109,44 @@ Which method to reach for — every one has a full runnable example in
 |---|---|
 | CLI (`make run`) | Interactive local testing, one specialist or the full crew |
 | REST (`/invocations`) | Calling from anything that speaks HTTP, or once deployed to AgentCore Runtime |
+| Browser chat widget (`make chat`) | Conversing with the **deployed** agent from a web UI — see below |
 | Python SDK | Embedding an agent directly in another Python process |
 | MCP | **Not built yet** — needs a Lambda-packaging step first, see below |
 | Event Driven (SQS/SNS/EventBridge/Kafka) | Not applicable — this project has no queue or event-bus trigger |
 | Agent-to-Agent | Already how the Supervisor calls its four specialists internally — see [Architecture](architecture.md#agent-to-agent-communication) |
+
+### Browser chat widget
+
+A browser can't call the cloud Runtime directly — `InvokeAgentRuntime`
+needs SigV4-signed requests, and AWS credentials never belong in a
+browser. [`chat-adapter/`](https://github.com/senthilsweb/claimwise-agents/tree/main/chat-adapter)
+is a small FastAPI bridge that translates the
+[mcp-chat-client](https://github.com/senthilsweb/mcp-chat-client)
+widget's REST/SSE contract into signed `InvokeAgentRuntime` calls, and
+the root `docker-compose.yml` runs both for testing:
+
+```bash
+# needs AGENT_RUNTIME_ARN in .env (the agent_arn from .bedrock_agentcore.yaml)
+make chat        # = docker compose up --build
+open http://localhost:3000
+```
+
+Multi-turn works because the widget resends its transcript every turn
+and the adapter folds it into the prompt — no AgentCore Memory needed.
+Details in [chat-adapter/README.md](https://github.com/senthilsweb/claimwise-agents/blob/main/chat-adapter/README.md).
+
+The adapter is also published as a public multi-arch image by
+[`publish-chat-adapter.yml`](https://github.com/senthilsweb/claimwise-agents/blob/main/.github/workflows/publish-chat-adapter.yml)
+on every push to `main` that touches `chat-adapter/`, so it runs anywhere
+without a checkout:
+
+```bash
+docker run --rm -p 8006:8006 \
+  -e AGENT_RUNTIME_ARN=arn:aws:bedrock-agentcore:us-east-2:...:runtime/claimwise_supervisor-... \
+  -e AWS_REGION=us-east-2 \
+  -v ~/.aws:/root/.aws:ro \
+  ghcr.io/senthilsweb/claimwise-chat-adapter:latest
+```
 
 ### MCP
 

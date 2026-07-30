@@ -1,0 +1,33 @@
+# Local test stack: the mcp-chat-client widget talking to the deployed
+# AgentCore Supervisor through chat-adapter/. Reads AWS creds and
+# AGENT_RUNTIME_ARN from .env (compose loads it automatically).
+#
+#   docker compose up --build   ->  open http://localhost:3000
+services:
+  chat-adapter:
+    build: chat-adapter
+    ports:
+      - "8006:8006"
+    environment:
+      AGENT_RUNTIME_ARN: ${AGENT_RUNTIME_ARN:?add AGENT_RUNTIME_ARN to .env (agent_arn in .bedrock_agentcore.yaml)}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      AWS_PROFILE: ${AWS_PROFILE:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    volumes:
+      # Fallback credential source when the key env vars above are blank.
+      - ~/.aws:/root/.aws:ro
+
+  chat-client:
+    image: ghcr.io/senthilsweb/mcp-chat-client:sha-391fda7
+    # The published image is amd64-only (see its build-and-publish.yml);
+    # runs fine on Apple Silicon under emulation.
+    platform: linux/amd64
+    ports:
+      - "3000:80"
+    environment:
+      # Resolved in the *browser*, so it points at the host-published
+      # adapter port, not the compose-internal service name.
+      AGENT_SERVICE_URL: http://localhost:8006
+    depends_on:
+      - chat-adapter

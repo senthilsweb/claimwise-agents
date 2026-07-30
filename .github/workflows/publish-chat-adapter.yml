@@ -1,0 +1,78 @@
+name: Publish chat-adapter image
+
+# Modelled on mcp-chat-client's build-and-publish.yml. Publishes the
+# chat-adapter bridge (chat-adapter/Dockerfile) to GHCR. Auth uses the
+# workflow's built-in GITHUB_TOKEN via `packages: write` — no repository
+# secrets required.
+#
+# NOTE: the package is created PRIVATE on first publish. Making it public
+# is a one-time manual step (GitHub → Packages → claimwise-chat-adapter →
+# Package settings → Change visibility) — there is no API for it.
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "chat-adapter/**"
+      - ".github/workflows/publish-chat-adapter.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "chat-adapter/**"
+      - ".github/workflows/publish-chat-adapter.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: senthilsweb/claimwise-chat-adapter
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Multi-arch (unlike the amd64-only chat client image): the adapter
+      # is pure-Python, so the arm64 build is cheap and runs natively on
+      # Apple Silicon without emulation.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: chat-adapter
+          file: chat-adapter/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

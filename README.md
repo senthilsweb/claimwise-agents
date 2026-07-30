@@ -31,6 +31,7 @@ cp .env.sample .env   # point DUCKDB_PATH at a built claimwise/dbt-pipeline/rcm.
 | Talk to one specialist directly | `make run AGENT=investigator` (or `analyst` / `advisor` / `steward`) |
 | Run the deterministic eval suite | `make eval` — 19 questions checked against live values |
 | Serve it over HTTP like AgentCore Runtime would | `PORT=18080 make runtime-dev` — [Examples](docs/examples.md) |
+| Chat with the **deployed** agent from a browser widget | `make chat`, then open <http://localhost:3000> — [chat-adapter/](chat-adapter/README.md) |
 | See every prompt and tool call | Set up tracing — [Operations](docs/operations.md) |
 | Understand the agent design | [Architecture](docs/architecture.md) |
 
@@ -59,6 +60,8 @@ agents/              the Python package
   eval/               tool_smoke (no LLM) + golden/claim/routing evals
   runtime.py          the AgentCore Runtime HTTP entrypoint
   cli.py              the local chat entrypoint
+chat-adapter/        FastAPI bridge: browser chat widget -> deployed AgentCore agent
+docker-compose.yml   widget + adapter test stack (make chat)
 docs/                the wiki (this README is only the front door)
 ```
 
