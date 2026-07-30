@@ -45,7 +45,7 @@ The wiki lives in [docs/](docs/) and is published at
 - [Architecture](docs/architecture.md) — the bounded-context design, agent flow, memory, security
 - [Configuration](docs/configuration.md) — every environment variable
 - [Examples](docs/examples.md) — every way to call the agents, with real output
-- [Deployment & Integration](docs/deployment-integration.md) — running it locally and (paused) in the cloud
+- [Deployment & Integration](docs/deployment-integration.md) — running it locally and **live on AWS**
 - [Operations](docs/operations.md) — tracing, cost, and every real failure with its fix
 - [Reference](docs/reference.md) — the API schema, error codes, FAQ
 

@@ -48,19 +48,23 @@ ever carries one context's vocabulary, and its tools are the *only* way
 it can touch data. Full reasoning in the
 [design doc](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/design.md).
 
-**Why is live cloud deployment paused?** Not a bug — a deliberate choice
-about IAM scope. See [Deployment & Integration](deployment-integration.md)
-and
+**Was live cloud deployment ever actually blocked?** No, just deliberately
+paused for a while — the IAM user was scoped down on purpose, and
+resuming meant an explicit decision about how far to widen it. Full
+story, including the two real bugs hit during the actual deploy, in
+[Deployment & Integration](deployment-integration.md),
+[Operations](operations.md#runbook), and
 [tasks.md](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md)
 Bolt 4.
 
-**Why test with a cheap Nova model instead of Claude?** Claude Sonnet 5
-was temporarily blocked by an AWS Marketplace payment issue unrelated to
-model access itself. Amazon's Nova models are billed directly, so they
-were a genuine free stand-in for verifying the *code* while that cleared.
-The tool layer is proven correct independently via `make smoke` (31
-checks, zero LLM calls), so the eval results say something real about the
-agent design even on a small model.
+**Why were early evals run on a cheap Nova model instead of Claude?**
+Claude Sonnet 5 was temporarily blocked by an AWS Marketplace payment
+issue unrelated to model access itself (since resolved — the live
+deployment runs Sonnet 5). Amazon's Nova models are billed directly, so
+they were a genuine free stand-in for verifying the *code* while that
+cleared. The tool layer is proven correct independently via `make smoke`
+(31 checks, zero LLM calls), so those eval results said something real
+about the agent design even on a small model.
 
 **Does any agent ever write to the warehouse?** No — see
 [Architecture](architecture.md#tool-calling).
@@ -71,26 +75,32 @@ states this rule explicitly.
 
 **Where is the writing standard for these docs?** The shared
 [documentation style guide](https://senthilsweb.github.io/ai-agents/style-guide/),
-plus the `ai-agent-docs` skill that defines this six-section structure.
+plus the `ai-agent-docs` skill that defines this page structure.
 
 ## Known Limitations
 
 - No MCP Gateway (needs a Lambda-packaging step not yet built).
-- No live AgentCore Memory (needs IAM permissions not yet granted).
-- No cloud deployment yet — Runtime is verified locally only.
-- No load testing performed.
-- Tested primarily against a small model (`amazon.nova-lite-v1:0`), not
-  the intended production model (Claude Sonnet 5), while a billing issue
-  was unresolved.
+- Memory is live but not yet verified to persist across turns in the
+  same session.
+- No load testing performed against the live deployment.
+- Two AgentCore observability permissions still missing
+  (`logs:CreateLogGroup`, `logs:PutDeliverySource`) — the deploy and
+  every invocation work fine without them; only full X-Ray trace
+  delivery is affected.
+- This project's own triple OTLP export (LangSmith/Arize/OpenObserve)
+  is not yet enabled on the live cloud deployment — only AgentCore's
+  built-in CloudWatch/X-Ray observability is.
 
 ## Future Enhancements
 
-- Resume `agentcore configure`/`deploy` once the IAM decision is
-  revisited (see [Deployment & Integration](deployment-integration.md)).
 - Package the tools as a Lambda handler and stand up the MCP Gateway.
-- Create a live AgentCore Memory resource and verify the session/actor
-  wiring already in `agents/runtime.py`.
-- Migrate the Databricks credential from a plaintext `.env` token to
-  AgentCore Identity's credential vending.
-- Re-run the full eval suite against Claude Sonnet 5 once Marketplace
-  billing clears, and compare against the Nova Lite baseline.
+- Verify Memory actually recalls across two calls in the same session
+  (the resource is live; this specific behavior isn't proven yet).
+- Grant the two remaining CloudWatch Logs permissions and enable this
+  project's own OTLP export (LangSmith/Arize/OpenObserve) on the live
+  deployment, alongside AgentCore's built-in observability.
+- Migrate the Databricks credential from a plaintext `.env`/`--env` value
+  to AgentCore Identity's credential vending.
+- Re-run the full eval suite against the live cloud deployment (Claude
+  Sonnet 5, Databricks) and compare against the earlier local Nova Lite
+  baseline.

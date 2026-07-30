@@ -48,21 +48,24 @@ a Supervisor that routes each question to whichever specialist owns it.
   (production warehouse) — the same tools, same SQL, same rules.
 - Exports full traces (every prompt, every tool call, every response) to
   any combination of LangSmith, Arize AX, and a generic OTLP collector.
+- Deployed live on Amazon Bedrock AgentCore's managed cloud runtime,
+  answering real questions against the Databricks warehouse — see
+  [Deployment & Integration](deployment-integration.md).
 
 ## Limitations
 
 - **Read-only.** No agent can write to the warehouse — there is no code
   path for it, not just a prompt instruction. See [Architecture](architecture.md).
-- **No live cloud deployment yet.** The AgentCore Runtime is built and
-  verified locally over real HTTP, but deploying it to AWS's managed
-  runtime is currently paused — see [Deployment & Integration](deployment-integration.md).
 - **No MCP Gateway yet.** Exposing the tools as MCP targets needs a
   Lambda-packaging step this project hasn't built — see
   [Deployment & Integration](deployment-integration.md).
-- **Memory is code-ready but untested** — it needs a live AgentCore
-  Memory resource this account can't create yet.
-- Tested primarily against `amazon.nova-lite-v1:0` while Claude Sonnet 5
-  access was blocked by an unrelated AWS billing issue — see
+- **Memory is live but not yet proven to persist across turns.** A real
+  AgentCore Memory resource is created and attached to the live Runtime;
+  what's not yet verified is that a second call in the same session
+  actually recalls the first.
+- Early evals were run against `amazon.nova-lite-v1:0` while Claude
+  Sonnet 5 access was blocked by an unrelated AWS billing issue (since
+  resolved — the live deployment runs Sonnet 5) — see
   [Reference](reference.md#faq) for why that doesn't invalidate the
   results.
 

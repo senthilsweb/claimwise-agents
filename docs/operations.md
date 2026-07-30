@@ -89,14 +89,15 @@ measured against a frontier model or under concurrent load.
 ## Cost Considerations
 
 - Model calls are billed per Bedrock's normal pricing; `amazon.nova-lite-v1:0`
-  is negligible cost per call and was used for development specifically
-  for that reason.
+  is negligible cost per call and was used for early development
+  specifically for that reason.
 - `run_dq_checks` runs a real `dbt test` subprocess (~5 seconds on
   DuckDB) on every call — cheap, but not free of latency.
-- Real cloud deployment (`agentcore deploy`) would create billed AWS
-  resources (ECR, CodeBuild, a live Runtime endpoint) — this is the main
-  reason it's currently paused rather than attempted casually. See
-  [Deployment & Integration](deployment-integration.md).
+- The live AgentCore Runtime deployment creates real, billed AWS
+  resources: a Runtime endpoint, an AgentCore Memory resource, and an S3
+  bucket for deployment artifacts. This is why deploying it was treated
+  as a deliberate step requiring an explicit IAM decision, not a casual
+  one — see [Deployment & Integration](deployment-integration.md).
 
 ## Runbook
 
@@ -142,13 +143,40 @@ payment method attached gets `INVALID_PAYMENT_INSTRUMENT` on the first
 real streaming call. Fix: add a payment method under **Billing → Payment
 preferences**. Amazon's own Nova models bypass Marketplace billing
 entirely, which is why they were used as a stand-in while this cleared.
+Since resolved — the live deployment runs the intended model, Claude
+Sonnet 5.
+
+**`numpy` too new to have a wheel for the deploy target.** The first live
+`agentcore deploy` attempt failed at the dependency-build step:
+`numpy==2.5.1` (pulled in transitively via `databricks-sql-connector` →
+`pandas`) had no published wheel for the aarch64-manylinux targets
+AgentCore's `direct_code_deploy` cross-compiles for, and the build step
+refuses to build from source. Fix: pinned `numpy<2.5` in `pyproject.toml`
+(resolved to 2.4.6) — same `databricks-sql-connector` behavior, just an
+older `numpy` release with wheels actually published for this platform.
+
+**Deploying without `--env` crashes the Runtime, and `agentcore invoke`
+reports the wrong symptom.** The first successful deploy had no
+environment variables set, so the Runtime crashed immediately on
+`BEDROCK_MODEL_ID is not set`. `agentcore invoke` reported this as
+`Runtime initialization time exceeded` — a generic timeout, not the real
+cause. The actual error only appeared in the CloudWatch runtime logs
+(`aws logs tail /aws/bedrock-agentcore/runtimes/<agent>-DEFAULT
+--log-stream-name-prefix "<date>/[runtime-logs"`). Fix: redeploy with
+every required `--env` set (`AGENT_TARGET=databricks`, `BEDROCK_MODEL_ID`,
+`DATABRICKS_*`) — `DUCKDB_PATH` is a local file path and is meaningless
+on the cloud runtime, so the live deployment always targets Databricks.
+Lesson: when `agentcore invoke` reports a timeout, check the CloudWatch
+logs before assuming it's actually slow — it may be crashing instantly.
 
 ### Recovery procedures
 
-None of the failures above require a manual recovery step once fixed —
-each was a code fix, not an operational incident. There is no
-in-production incident history yet (this project has not been deployed
-to AWS's managed runtime — see [Deployment & Integration](deployment-integration.md)).
+None of the failures above required a manual recovery step beyond the
+fix itself — each was a code or deploy-command fix, not an operational
+incident requiring rollback. `agentcore deploy --auto-update-on-conflict`
+safely redeploys over an existing agent (used for the `--env` fix above);
+`agentcore status` and the CloudWatch log commands are the first things
+to check if a live invocation misbehaves.
 
 ## What next
 

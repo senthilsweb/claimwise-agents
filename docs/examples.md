@@ -80,6 +80,71 @@ investigator = build_investigator(model)
 print(investigator("What is the status of claim CLM48516149?"))
 ```
 
+## Live Cloud Deployment
+
+The Supervisor is deployed on Amazon Bedrock AgentCore's managed Runtime,
+running Claude Sonnet 5 against the live Databricks warehouse — see
+[Deployment & Integration](deployment-integration.md) for how it got
+there. Talk to it with the `agentcore` CLI itself:
+
+```bash
+export AWS_PROFILE=claimwise AWS_REGION=us-east-2 AGENTCORE_SUPPRESS_RECOMMENDATION=1
+agentcore invoke '{"prompt": "What is our overall denial rate?"}'
+```
+
+```
+Response:
+{"result": "Our overall denial rate is **14.62%** — that's the percentage of all
+claims currently in \"Denied\" status, per Claimwise's executive summary
+metrics.\n"}
+```
+
+A claim question, routed to the Claims Investigator:
+
+```bash
+agentcore invoke '{"prompt": "What is the status of claim CLM48516149?"}'
+```
+
+```
+{"result": "**Claim CLM48516149** (patient Amy Potter, payer Kaiser Permanente,
+billed $4,218.95):\n\n- **Current status: Appealed**\n- Timeline: Filed on
+2026-07-12 → a payment processing activity on 2026-07-13 led to a denial → an
+appeal was submitted on 2026-07-14.\n- **$0 collected so far** — the full
+$4,218.95 remains outstanding while the appeal is pending.\n"}
+```
+
+A portfolio question, routed to the Denials & AR Advisor — notice Claude
+Sonnet 5 adds real synthesis on top of the tool's numbers ("$2.23 written
+off for every $1 recovered") while staying grounded in what
+`appeal_outcomes` actually returned:
+
+```bash
+agentcore invoke '{"prompt": "Are appeals worth the effort for us?"}'
+```
+
+```
+{"result": "## Are appeals worth the effort? — Short answer: **Selectively yes,
+but not as a blanket strategy.**\n\n**The numbers:**\n- **Success rate:** Only
+30.9% of appealed claims (600 of 1,944) actually collect.\n- **Dollars:** $1.51M
+is recovered via successful appeals vs. **$3.37M that's appealed but never
+collected** — roughly $2.23 written off for every $1 recovered.\n..."}
+```
+
+And the Data Steward, honestly reporting an infrastructure gap rather
+than guessing — `CLAIMWISE_DBT_PATH` isn't set on the cloud Runtime, since
+it points at a local filesystem path:
+
+```bash
+agentcore invoke '{"prompt": "Can I trust todays numbers? Run a check."}'
+```
+
+```
+{"result": "I ran the trust check, and it **failed to execute** — not a data
+issue, but an infrastructure one: the environment variable CLAIMWISE_DBT_PATH
+isn't set, so the test suite couldn't even start.\n\n**Bottom line: I can't
+confirm today's numbers are trustworthy.** ..."}
+```
+
 ## MCP
 
 **Not built yet.** Exposing the tools (`query_metric`, `get_claim_story`,

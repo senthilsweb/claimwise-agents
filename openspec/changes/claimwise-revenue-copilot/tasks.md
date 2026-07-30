@@ -39,63 +39,76 @@ deprecation warning pointing at a new Node-based `@aws/agentcore` CLI;
 Node was broken locally (unrelated Homebrew issue), so the still-functional
 Python toolkit was kept rather than yak-shaving an unrelated fix.
 
-- [x] 4.1 Runtime: `agents/runtime.py` wraps the Supervisor with
-  `BedrockAgentCoreApp` (`bedrock_agentcore` SDK). Fixed a real correctness
-  bug before it ever shipped: the first draft built one Supervisor at
-  module load and reused it for every HTTP invocation — since Strands
-  `Agent` objects hold conversation state, that would have leaked one
-  caller's conversation into another's across requests on the same
-  process. Fixed: a fresh Supervisor is built per invocation, matching the
-  pattern already used in the evals. **Verified locally** (not yet
-  deployed to AWS): started the app on a local port, called `/ping` and
-  `/invocations` over real HTTP with `amazon.nova-lite-v1:0`, got correct
-  routed answers for both a metrics question and a claim question, and
-  confirmed traces still landed in OpenObserve through the wrapper
-  (`chat` → `execute_event_loop_cycle` → `execute_tool ...` spans, real
-  trace_id). Cloud `agentcore configure` / `agentcore deploy` pending the
-  IAM decision above.
-- [ ] 4.2 Gateway: **designed, not built** — exposing tools as MCP Gateway
-  targets requires packaging them as Lambda handlers first (Gateway
-  targets are `lambda | openApiSchema | mcpServer | smithyModel`; there is
-  no "point at a Python function" option), which is its own unverified
-  build without live AWS access. Concrete next steps once IAM is granted:
-  package `agents/tools/*.py` as a Lambda handler → `agentcore
-  create_mcp_gateway --name claimwise-tools-gateway --region us-east-2` →
-  `agentcore create_mcp_gateway_target --gateway-arn <arn> --gateway-url
-  <url> --role-arn <role> --target-type lambda` → consume from the
-  Supervisor via `MCPClient` + `aws_iam_streamablehttp_client` (same
-  pattern as `bedrock_agentcore.gateway.integrations.strands`, already
-  installed).
+**Resumed and deployed (2026-07-30).** Granted `IAMFullAccess`,
+`AmazonS3FullAccess`, `BedrockAgentCoreFullAccess`, and
+`AmazonBedrockAgentCoreMemoryBedrockModelInferenceExecutionRolePolicy` to
+the `claimwise-agents` IAM user, then ran `agentcore configure` +
+`agentcore deploy` for real. Also: the AWS Marketplace payment-instrument
+block from Bolt 1 (see `claimwise-agents-nova-lite-reliability` memory)
+had cleared by this point, so this deploy runs on the intended production
+model, `us.anthropic.claude-sonnet-5` — not the Nova Lite stand-in.
+
+- [x] 4.1 Runtime: **live, not just local.** Real deploy:
+  `arn:aws:bedrock-agentcore:us-east-2:932612418290:runtime/claimwise_supervisor-lmETE5GGLM`,
+  status `Ready`. One real packaging bug hit and fixed: the first deploy
+  attempt failed at the dependency-build step —
+  `numpy==2.5.1` (pulled in transitively via `databricks-sql-connector`
+  → `pandas`) had no published wheel for the aarch64-manylinux targets
+  AgentCore's `direct_code_deploy` cross-compiles for, and the build
+  step refuses to build from source. Pinned `numpy<2.5` (resolved to
+  2.4.6), redeployed clean. Second gotcha: the first successful deploy
+  had no `--env` vars, so the Runtime crashed on `BEDROCK_MODEL_ID is not
+  set` — `agentcore invoke` surfaced this as a generic "initialization
+  time exceeded" error; the real cause only appeared in the CloudWatch
+  runtime logs (`aws logs tail .../runtime-logs`). Redeployed with
+  `--env AGENT_TARGET=databricks --env BEDROCK_MODEL_ID=... --env
+  DATABRICKS_HOST=... --env DATABRICKS_HTTP_PATH=... --env
+  DATABRICKS_TOKEN=... --env DATABRICKS_CATALOG=...` (DuckDB is a local
+  file path — meaningless on the cloud runtime, so the live deployment
+  always runs against Databricks). Verified with three real
+  `agentcore invoke` calls against the live endpoint: a metrics question
+  (denial rate, correct), a claim question (CLM48516149, full correct
+  narration), and a portfolio question (appeal outcomes — Sonnet 5 added
+  real synthesis on top of the tool's numbers, "$2.23 written off for
+  every $1 recovered", still grounded in `appeal_outcomes`'s real output).
+- [ ] 4.2 Gateway: still **designed, not built** — exposing tools as MCP
+  Gateway targets requires packaging them as Lambda handlers first
+  (Gateway targets are `lambda | openApiSchema | mcpServer |
+  smithyModel`; there is no "point at a Python function" option).
+  Concrete next steps: package `agents/tools/*.py` as a Lambda handler →
+  `agentcore create_mcp_gateway --name claimwise-tools-gateway --region
+  us-east-2` → `agentcore create_mcp_gateway_target --gateway-arn <arn>
+  --gateway-url <url> --role-arn <role> --target-type lambda` → consume
+  from the Supervisor via `MCPClient` + `aws_iam_streamablehttp_client`.
 - [x] 4.3 Identity: the actual requirement — read-only warehouse access,
-  verified a write attempt fails — was **already done and already
-  verified** in `make smoke` (`run_select rejects a write statement`,
-  passing since Bolt 1). What's genuinely deferred is *AgentCore's*
-  Identity service specifically: vending the Databricks token to the
-  deployed Runtime via a Workload Identity + Credential Provider instead
-  of a plaintext `.env` var. Current state (env-var credentials) matches
-  this project's own stated convention and is not a gap to "fix" casually;
-  migrating it is a deliberate, separate decision for whenever live
-  deploy resumes, not written speculatively here.
-- [x] 4.4 Memory: **code-ready, untested.** `agents/runtime.py` builds an
-  `AgentCoreMemorySessionManager` (from `bedrock_agentcore.memory.
-  integrations.strands`) keyed by the AgentCore request's `session_id`,
-  but only if `MEMORY_ID` is set (blank by default — `_session_manager_for`
-  returns `None` and behavior is identical to before Memory existed).
-  `agents/contexts/supervisor.py`'s `build_agent` now accepts an optional
-  `session_manager`, passed straight to Strands' `Agent(...)`; only the
-  Supervisor's own dialogue is remembered — specialists are still rebuilt
-  fresh per tool call, so memory never leaks into a bounded context that
-  shouldn't have it. Genuinely untested: needs a live Memory resource via
-  `MemoryClient.create_memory_and_wait(...)`, which needs
-  `bedrock-agentcore:CreateMemory` — not yet granted.
-- [x] 4.5 Observability: already fully built in Bolt 1 (`agents/telemetry.py`)
-  and **now confirmed working through the Runtime wrapper specifically**,
-  not just the CLI chat loop — same triple OTLP export (LangSmith / Arize
-  AX / OpenObserve), verified by querying OpenObserve directly for real
-  spans from an actual HTTP `/invocations` call.
-- Verification: `make smoke` extended to **31/31** — 2 new checks construct
-  the Runtime app with Starlette's `TestClient` and hit `/ping` and an
-  empty-prompt `/invocations` in-process, no network bind, no model call.
+  verified a write attempt fails — was already done and verified in
+  `make smoke` since Bolt 1. *AgentCore's* Identity service specifically
+  (vending the Databricks token via Workload Identity instead of a
+  `--env` var) is still deferred — the live deployment above passes the
+  token as a plain environment variable, matching this project's stated
+  convention; migrating to credential vending is a deliberate future step,
+  not a gap.
+- [x] 4.4 Memory: **live, not just code-ready.** `agentcore deploy` auto-
+  created a real AgentCore Memory resource
+  (`claimwise_supervisor_mem-oka122BEo4`, STM-only, 30-day retention) and
+  it reached `ACTIVE` (took 153s). `agentcore status` confirms it's
+  attached to the Runtime. Not yet verified: that a second invocation in
+  the same session actually recalls the first (each test `agentcore
+  invoke` call opened its own new session) — worth a follow-up call with
+  an explicit shared session id.
+- [x] 4.5 Observability: `agents/telemetry.py`'s triple OTLP export
+  (LangSmith/Arize/OpenObserve) was **not** enabled for this cloud
+  deploy (not passed via `--env`) — separate from that, AgentCore's own
+  built-in observability (ADOT → CloudWatch Logs + X-Ray) is live: real
+  runtime logs were read directly from CloudWatch to diagnose the
+  `BEDROCK_MODEL_ID` crash above. Two minor permission gaps surfaced
+  during deploy (non-fatal, deployment succeeds either way):
+  `logs:CreateLogGroup` and `logs:PutDeliverySource` — needed for
+  AgentCore's automatic trace-delivery setup, not yet granted. Add
+  `CloudWatchLogsFullAccess` (or a scoped log-group/delivery-source
+  policy) to close this if full X-Ray trace delivery is wanted later.
+- Verification: `make smoke` still **31/31** (unaffected — these are all
+  live-cloud findings, not local regressions).
 
 ## B5. Validation (Operations)
 - [ ] 5.1 Full eval suite (~30 golden questions) green on DuckDB
