@@ -19,6 +19,30 @@ flowchart LR
     W --> P[dbt test / manifest.json]
 ```
 
+## Tech Stack
+
+The one distinction that makes the rest of the stack make sense:
+**Strands is the agent harness, AgentCore is the hosting substrate.**
+Strands owns everything that happens *inside* a request — the agent
+loop, tool calling, agents-as-tools routing, tracing hooks — and runs
+identically on a laptop or in the cloud. AgentCore owns everything
+*around* a request — the managed HTTP endpoint, session lifecycle,
+Memory, observability delivery — and contains no agent logic at all.
+Either side can change without touching the other; that's why `make run`
+and the live deployment execute the same code.
+
+| Layer | Technology | Role here |
+|---|---|---|
+| Agent harness | [Strands Agents SDK](https://strandsagents.com) | The loop: prompts, tool calling, `Agent.as_tool()` for Supervisor→specialist routing |
+| Hosting | Amazon Bedrock AgentCore Runtime | Managed `/invocations` endpoint, sessions, `direct_code_deploy` (no Docker) |
+| Model | Claude Sonnet 5 via Amazon Bedrock | The only model; id always from `BEDROCK_MODEL_ID`, never hardcoded |
+| Memory | AgentCore Memory (STM-only) | Auto-created at deploy; session-scoped conversation events |
+| Data | DuckDB (dev) / Databricks (prod) | The claimwise gold layer — the only thing tools read |
+| Governance | dbt | The Data Steward shells out to `dbt test` and reads `manifest.json` lineage |
+| Chat channel | [mcp-chat-client](https://github.com/senthilsweb/mcp-chat-client) + FastAPI `chat-adapter/` | Browser conversations with the deployed agent — [Chat Channel](chat-channel.md) |
+| Observability | OpenTelemetry → LangSmith, Arize AX, OTLP collector; CloudWatch/X-Ray | Every prompt and tool call traced, locally and in the cloud |
+| Tooling | uv, GitHub Actions, GHCR | Dependency management, docs publish, public adapter image |
+
 ## Entry Points
 
 Every way a question reaches the Supervisor — same agent, different
@@ -116,6 +140,48 @@ AgentCore request's session ID, but only when `MEMORY_ID` is set — blank
 by default, with identical behavior to not having Memory at all. It needs
 a live AgentCore Memory resource this account can't create yet — see
 [Deployment & Integration](deployment-integration.md).
+
+## Harness Engineering
+
+The deliberate engineering around the agent loop — isolation, memory,
+expiration, guardrails — in one picture:
+
+```mermaid
+flowchart TB
+    subgraph LC [Lifecycle — isolation by construction]
+        F[Fresh Supervisor + specialists per invocation<br/>one caller's conversation can never leak into another's]
+    end
+    subgraph SE [Sessions — expiration]
+        S1[One runtimeSessionId per conversation<br/>AgentCore defaults: idle sessions expire ~15 min, max 8 h]
+    end
+    subgraph ME [Memory]
+        M1[AgentCore Memory, STM-only<br/>stored events expire after 30 days]
+        M2[Chat channel: client resends transcript,<br/>adapter folds it into the prompt]
+    end
+    subgraph GU [Guardrails in code, not prompts]
+        G1[run_select: SELECT-only gate]
+        G2[METRIC_CATALOG allowlist]
+        G3[claim math computed in tools, never by the model]
+    end
+    subgraph OB [Verification]
+        O1[OTel traces → LangSmith / Arize / CloudWatch]
+        O2[Deterministic evals vs live tables — no LLM judge]
+    end
+    LC --> SE --> ME
+    LC --> GU --> OB
+```
+
+Reading it top to bottom: every invocation starts clean (Lifecycle), is
+scoped to a conversation that AgentCore expires on its own schedule
+(Sessions), remembers only what's deliberately carried — cloud-side STM
+events with a 30-day expiry, or the chat channel's folded transcript
+(Memory) — can only ever read what the code allows regardless of what
+the model asks for (Guardrails), and everything it does is traced and
+eval-checked against real numbers (Verification). The details behind
+each box are in the sections above and in
+[Chat Channel](chat-channel.md); the expiry values come from the deploy
+state file — see
+[`bedrock_agentcore.sample.yaml`](https://github.com/senthilsweb/claimwise-agents/blob/main/bedrock_agentcore.sample.yaml).
 
 ## Prompt Strategy
 

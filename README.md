@@ -43,7 +43,8 @@ The wiki lives in [docs/](docs/) and is published at
 
 - [Overview](docs/index.md) — what it is, why it exists, the bounded context
 - [Getting Started](docs/getting-started.md) — two 5-minute paths in
-- [Architecture](docs/architecture.md) — the bounded-context design, agent flow, memory, security
+- [Code Tour](docs/code-tour.md) — the folder tree and the five load-bearing files
+- [Architecture](docs/architecture.md) — tech stack, bounded-context design, agent flow, harness engineering, security
 - [Chat Channel](docs/chat-channel.md) — how a chat client reaches the deployed agent through chat-adapter, and what a new channel (Slack, Teams) would add
 - [Configuration](docs/configuration.md) — every environment variable
 - [Examples](docs/examples.md) — every way to call the agents, with real output

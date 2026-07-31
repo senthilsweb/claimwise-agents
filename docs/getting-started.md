@@ -36,6 +36,9 @@ docs/           this site
 openspec/       specs and change proposals
 ```
 
+The full tree, the load-bearing files, and the patterns to know before
+editing are on their own page: [Code Tour](code-tour.md).
+
 ## Quick Start — zero AWS cost (2 minutes)
 
 Edit `.env` and point `DUCKDB_PATH` at your built `rcm.duckdb`, then:

@@ -33,6 +33,8 @@ _model = get_model()  # the model client is stateless and safe to reuse
 
 
 def _session_manager_for(session_id: str | None):
+    """Build an AgentCore Memory session manager, or None when Memory is
+    unconfigured (blank MEMORY_ID) or no session id came with the request."""
     if not config.MEMORY_ID:
         return None
     if not session_id:

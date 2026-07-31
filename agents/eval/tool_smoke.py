@@ -17,12 +17,19 @@ from agents.tools.steward import get_lineage, glossary_lookup, run_dq_checks
 
 
 def check(label: str, condition: bool, detail: str = "") -> bool:
+    """Print a PASS/FAIL line (detail only on failure) and return condition."""
     status = "PASS" if condition else "FAIL"
     print(f"  [{status}] {label}" + (f" — {detail}" if detail and not condition else ""))
     return condition
 
 
 def main() -> int:
+    """Exercise every tool and guardrail directly, without any model call.
+
+    Covers all four agents' tools against live data, proves the read-only
+    guard and metric allowlist actually reject bad input, and pings the
+    AgentCore runtime app. Exit code 0 only when every check passed.
+    """
     results = []
 
     print("Metric catalog and explain_metric:")

@@ -22,6 +22,7 @@ class ReadOnlyViolation(Exception):
 
 
 def _assert_select_only(sql: str) -> None:
+    """Raise ReadOnlyViolation unless sql is a single SELECT/WITH statement."""
     stripped = sql.strip().rstrip(";")
     if ";" in stripped:
         raise ReadOnlyViolation("Only a single statement is allowed (no ';'-separated statements).")
@@ -42,6 +43,7 @@ _duckdb_conn = None
 
 
 def _get_duckdb_conn():
+    """Lazily open (and cache) the read-only DuckDB connection."""
     global _duckdb_conn
     if _duckdb_conn is None:
         import duckdb
@@ -67,6 +69,7 @@ def release_duckdb_connection() -> None:
 
 
 def _get_databricks_conn():
+    """Open a fresh Databricks SQL connection (closed per query by run_select)."""
     from databricks import sql as databricks_sql
 
     return databricks_sql.connect(

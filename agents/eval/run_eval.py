@@ -26,6 +26,8 @@ def _normalize(text: str) -> str:
 
 
 def _run_suite(label: str, agent, questions) -> tuple[int, int]:
+    """Run one golden-question suite; a question passes when its expected
+    value (fetched live) appears in the agent's answer. Returns (passed, total)."""
     print(f"=== {label} ===")
     passed = 0
     for q in questions:
@@ -42,6 +44,8 @@ def _run_suite(label: str, agent, questions) -> tuple[int, int]:
 
 
 def _run_routing_suite(model) -> tuple[int, int]:
+    """Run the routing questions through a fresh Supervisor each, checking
+    which specialist tool it actually called. Returns (passed, total)."""
     print("=== Supervisor routing ===")
     passed = 0
     for rq in ROUTING_QUESTIONS:
@@ -57,6 +61,11 @@ def _run_routing_suite(model) -> tuple[int, int]:
 
 
 def main() -> int:
+    """Run all three suites (Analyst, Investigator, Supervisor routing).
+
+    Needs Bedrock model access — every question is a real agent call.
+    Exit code 0 only when every question in every suite passed.
+    """
     setup_telemetry()
     model = get_model()
 

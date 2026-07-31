@@ -11,6 +11,8 @@ from dataclasses import dataclass
 
 @dataclass
 class RoutingQuestion:
+    """One question plus the specialist tool the Supervisor must invoke for it."""
+
     id: str
     question: str
     expected_specialist: str

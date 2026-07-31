@@ -1,0 +1,45 @@
+# Sample of the .bedrock_agentcore.yaml the agentcore CLI writes after
+# `agentcore configure` + `agentcore deploy`. The real file is gitignored —
+# it pins account-specific state (account id, role/agent/memory ARNs, a
+# session id) that is not portable and not yours to reuse. This sample
+# shows the shape so you know what a successful deploy leaves behind;
+# every <placeholder> is filled in by the CLI, never by hand.
+default_agent: claimwise_supervisor
+agents:
+  claimwise_supervisor:
+    name: claimwise_supervisor
+    language: python
+    entrypoint: /path/to/claimwise-agents/agents/runtime.py
+    deployment_type: direct_code_deploy   # no Docker — zips source to S3
+    runtime_type: PYTHON_3_11
+    platform: linux/arm64                 # AgentCore's cross-compile target
+    source_path: /path/to/claimwise-agents
+    aws:
+      execution_role: arn:aws:iam::<account-id>:role/AmazonBedrockAgentCoreSDKRuntime-<region>-<suffix>
+      execution_role_auto_create: false
+      account: '<account-id>'
+      region: us-east-2
+      s3_path: s3://bedrock-agentcore-codebuild-sources-<account-id>-<region>
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true                     # logs + traces delivery (needed two IAM passes — see docs/operations.md)
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null   # null = AgentCore defaults
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: claimwise_supervisor-<suffix>
+      agent_arn: arn:aws:bedrock-agentcore:<region>:<account-id>:runtime/claimwise_supervisor-<suffix>
+    memory:
+      mode: STM_ONLY                      # auto-created by deploy itself
+      memory_id: claimwise_supervisor_mem-<suffix>
+      memory_arn: arn:aws:bedrock-agentcore:<region>:<account-id>:memory/claimwise_supervisor_mem-<suffix>
+      memory_name: claimwise_supervisor_mem
+      event_expiry_days: 30               # stored conversation events expire after 30 days
+      was_created_by_toolkit: true
+    identity:
+      credential_providers: []
+    aws_jwt:
+      enabled: false

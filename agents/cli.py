@@ -23,6 +23,12 @@ _AGENTS = {
 
 
 def main() -> None:
+    """Run an interactive chat loop against one agent from _AGENTS.
+
+    The agent is chosen by the first CLI argument (default: supervisor).
+    Each question is a fresh turn on the same Agent object, so the
+    conversation accumulates for the life of the process — Ctrl-D quits.
+    """
     choice = sys.argv[1] if len(sys.argv) > 1 else "supervisor"
     if choice not in _AGENTS:
         print(f"Unknown agent '{choice}'. Choose one of: {', '.join(_AGENTS)}")

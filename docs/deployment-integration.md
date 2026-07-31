@@ -100,6 +100,28 @@ not just locally.
 **Docker, AWS Lambda, Kubernetes:** not part of this project's deployment
 story — AgentCore Runtime is the only cloud target designed for.
 
+## Upgrading
+
+What to run when something changes, by what changed:
+
+| What changed | How to upgrade |
+|---|---|
+| Agent code or prompts | Re-run the full `agentcore deploy` command above — it updates in place, same ARN, no client changes. Pass the **complete `--env` set every time**: env vars do not persist between deploys (forgetting them is exactly the crash in the Runbook). |
+| Model | Change `--env BEDROCK_MODEL_ID=...` and redeploy. Nothing else references the model id. |
+| Python dependencies | `uv sync` locally, run `make smoke && make eval`, then redeploy. Mind the `numpy<2.5` pin — AgentCore's arm64 cross-compile refuses to build from source (Runbook). |
+| chat-adapter | Push to `main` touching `chat-adapter/**` — CI publishes the new image. Then `docker compose pull && docker compose up -d` wherever the stack runs. |
+| Chat widget | Bump the pinned `sha-*` tag on the `chat-client` image in `docker-compose.yml`. |
+
+Verify any agent redeploy the same way every time: `agentcore status`,
+one `agentcore invoke` smoke question, and — if it fails — CloudWatch
+logs first, because `agentcore invoke` reports startup crashes as
+generic timeouts ([Operations](operations.md#runbook)).
+
+Each successful deploy rewrites the gitignored `.bedrock_agentcore.yaml`
+with the account-specific state (ARNs, memory id, session id) —
+[`bedrock_agentcore.sample.yaml`](https://github.com/senthilsweb/claimwise-agents/blob/main/bedrock_agentcore.sample.yaml)
+shows its shape without the real values.
+
 ## Integration Methods
 
 Which method to reach for — every one has a full runnable example in

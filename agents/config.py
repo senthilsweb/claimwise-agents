@@ -48,6 +48,7 @@ MEMORY_ACTOR_ID = os.getenv("MEMORY_ACTOR_ID", "demo-user")
 
 
 def require(value: str, name: str) -> str:
+    """Return value, or fail loudly (naming the missing env var) if blank."""
     if not value:
         raise RuntimeError(f"{name} is not set — check .env (see .env.sample)")
     return value

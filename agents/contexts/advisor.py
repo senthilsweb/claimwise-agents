@@ -40,6 +40,11 @@ individual collections) — that is the Claims Investigator's bounded context.
 
 
 def build_agent(model) -> Agent:
+    """Build a fresh Denials & AR Advisor agent on the given model.
+
+    Called per conversation (or per Supervisor invocation) — Strands Agent
+    objects hold conversation state, so they are never shared across callers.
+    """
     return Agent(
         model=model,
         system_prompt=SYSTEM_PROMPT,

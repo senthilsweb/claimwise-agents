@@ -88,6 +88,7 @@ METRIC_CATALOG: dict[str, dict] = {
 
 
 def _validate_table(table: str) -> dict:
+    """Return the table's catalog entry, or raise if it isn't a published metric."""
     if table not in METRIC_CATALOG:
         allowed = ", ".join(sorted(METRIC_CATALOG))
         raise ValueError(f"'{table}' is not a published metric. Allowed tables: {allowed}")
@@ -95,6 +96,7 @@ def _validate_table(table: str) -> dict:
 
 
 def _validate_columns(table: str, columns: list[str]) -> None:
+    """Raise if any column isn't in the table's catalog entry."""
     known = METRIC_CATALOG[table]["columns"]
     unknown = [c for c in columns if c not in known]
     if unknown:

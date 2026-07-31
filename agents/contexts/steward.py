@@ -34,6 +34,11 @@ not in the glossary, say so plainly instead of making up a definition.
 
 
 def build_agent(model) -> Agent:
+    """Build a fresh Data Steward agent on the given model.
+
+    Called per conversation (or per Supervisor invocation) — Strands Agent
+    objects hold conversation state, so they are never shared across callers.
+    """
     return Agent(
         model=model,
         system_prompt=SYSTEM_PROMPT,

@@ -35,6 +35,7 @@ theme:
 nav:
   - Overview: index.md
   - Getting Started: getting-started.md
+  - Code Tour: code-tour.md
   - Architecture: architecture.md
   - Chat Channel: chat-channel.md
   - Configuration: configuration.md

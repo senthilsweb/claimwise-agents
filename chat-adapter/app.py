@@ -51,11 +51,16 @@ app.add_middleware(
 
 
 class Turn(BaseModel):
+    """One prior message in the widget's transcript (role + content)."""
+
     role: str
     content: str
 
 
 class ChatRequest(BaseModel):
+    """POST /chat/stream body — the widget's message plus optional
+    session id and full transcript so far."""
+
     message: str
     session_id: str | None = None
     history: list[Turn] | None = None
@@ -91,17 +96,26 @@ def _build_prompt(req: ChatRequest) -> str:
 
 
 def _sse(chunk: dict) -> str:
+    """Encode one chunk as a server-sent-events data line."""
     return f"data: {json.dumps(chunk)}\n\n"
 
 
 @app.get("/health")
 def health() -> dict:
+    """Liveness probe for compose/deployment health checks."""
     return {"status": "ok"}
 
 
 @app.post("/chat/stream")
 def chat_stream(req: ChatRequest) -> StreamingResponse:
+    """Bridge one widget turn to InvokeAgentRuntime, streamed back as SSE.
+
+    Always ends the stream with `data: [DONE]`, and surfaces any AWS error
+    as an SSE error chunk rather than an HTTP failure — the widget renders
+    it in the conversation instead of showing a dead bubble.
+    """
     def gen():
+        """Yield SSE chunks: status line, then the answer (or error), then [DONE]."""
         # Shows as a live status line in the widget while the crew works.
         yield _sse({"action": "Asking the Revenue Copilot…"})
         try:

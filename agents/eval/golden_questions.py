@@ -12,23 +12,28 @@ from agents.data import gold_table, run_select
 
 @dataclass
 class GoldenQuestion:
+    """One golden question with a callable that fetches its expected value live."""
+
     id: str
     question: str
     expected: callable  # () -> str, the value the answer must contain
 
 
 def _fmt(value) -> str:
+    """Format a value the way an answer would state it (floats to 2 decimals)."""
     if isinstance(value, float):
         return f"{value:.2f}".rstrip("0").rstrip(".") if value == int(value) else f"{value:.2f}"
     return str(value)
 
 
 def _executive_summary_value(column: str) -> str:
+    """Read one column straight off the single-row mtr_executive_summary."""
     row = run_select(f"SELECT {column} FROM {gold_table('mtr_executive_summary')}")[0]
     return _fmt(row[column])
 
 
 def _denied_claim_count() -> str:
+    """Live denied-claim count from mtr_claims_funnel."""
     row = run_select(
         f"SELECT claim_count FROM {gold_table('mtr_claims_funnel')} WHERE claim_status = 'Denied'"
     )[0]
@@ -36,6 +41,7 @@ def _denied_claim_count() -> str:
 
 
 def _worst_payer_by_denial_rate() -> str:
+    """Payer with the highest denial rate, straight off mtr_payer_scorecard."""
     row = run_select(
         f"SELECT payer_name FROM {gold_table('mtr_payer_scorecard')} "
         "ORDER BY denial_rate_pct DESC LIMIT 1"

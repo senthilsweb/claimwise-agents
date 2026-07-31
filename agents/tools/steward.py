@@ -73,6 +73,7 @@ def run_dq_checks() -> dict:
 
 
 def _load_manifest() -> dict:
+    """Load the claimwise repo's dbt manifest.json (fails if not built yet)."""
     repo = config.require(config.CLAIMWISE_DBT_PATH, "CLAIMWISE_DBT_PATH")
     manifest_path = Path(repo) / "target" / "manifest.json"
     if not manifest_path.exists():
@@ -81,6 +82,7 @@ def _load_manifest() -> dict:
 
 
 def _find_node(manifest: dict, model_name: str) -> tuple[str, dict] | None:
+    """Find a dbt node by model name; None if the manifest has no such model."""
     for node_id, node in manifest.get("nodes", {}).items():
         if node.get("name") == model_name:
             return node_id, node

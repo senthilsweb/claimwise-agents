@@ -13,26 +13,32 @@ from agents.tools.billing import get_claim_story
 
 @dataclass
 class ClaimQuestion:
+    """One golden question with a callable that fetches its expected value live."""
+
     id: str
     question: str
     expected: callable  # () -> str, the value the answer must contain
 
 
 def _appealed_claim_status() -> str:
+    """Live status of the known appealed fixture claim."""
     return get_claim_story("CLM48516149")["claim"]["claim_status"]
 
 
 def _appealed_claim_has_appeal() -> str:
+    """Assert the fixture claim still has an appeal activity; expect 'appeal'."""
     story = get_claim_story("CLM48516149")
     assert any(a["is_appeal"] for a in story["activities"]), "fixture claim lost its appeal activity"
     return "appeal"
 
 
 def _collected_claim_total() -> str:
+    """Live total_collected of the known collected fixture claim."""
     return str(get_claim_story("CLM46475778")["total_collected"])
 
 
 def _unknown_claim_not_found() -> str:
+    """Assert the nonexistent claim really is missing; expect 'not' in the answer."""
     assert get_claim_story("CLM00000000")["found"] is False
     return "not"
 
