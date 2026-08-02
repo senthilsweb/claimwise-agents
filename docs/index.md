@@ -4,17 +4,20 @@
 
 Claimwise is a healthcare revenue cycle management company — a synthetic
 one, but built to feel real. The [claimwise](https://github.com/senthilsweb/claimwise)
-repo generates its entire book of business: 5,000 claims across 8,000
-encounters, spread over 24 months. The generator deliberately avoids
-uniform randomness, because a flat distribution never looks like a real
-billing shop. Claim statuses are weighted the way an actual book settles
-— about 61% approved, 14.6% denied, and a mid-cycle tail of claims still
-in review or freshly submitted, because a claim filed last week simply
-hasn't had time to resolve. Collections follow the same idea: an
-approved claim usually pays out near its billed amount, with a tail of
-partial recoveries. A dbt pipeline refines all of it through bronze,
-silver, and gold, ending in a published metric layer where every KPI is
-defined exactly once.
+repo generates its entire book of business — 5,000 claims across 8,000
+encounters, spread over 24 months — and deliberately avoids uniform
+randomness, because a flat distribution never looks like a real billing
+shop:
+
+- **Claim statuses settle the way a real book settles** — about 61%
+  approved, 14.6% denied, and a mid-cycle tail still in review or
+  freshly submitted, because a claim filed last week simply hasn't had
+  time to resolve.
+- **Collections follow recovery reality** — an approved claim usually
+  pays near its billed amount, with a tail of partial recoveries.
+- **A dbt pipeline refines all of it** through bronze, silver, and gold,
+  ending in a published metric layer where every KPI is defined exactly
+  once.
 
 That gold layer already tells a story: $12.6M billed, $6.05M collected,
 $4.7M still sitting in open AR, a 14.62% denial rate. The
@@ -51,6 +54,38 @@ over the **REST API** ([Examples](examples.md)), or from the **CLI**
 channels — tracked in the
 [task register](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md),
 like all in-flight work.
+
+## Agentic AI Analytics, through metadata engineering
+
+Strip the framing away and every answer above is the same move: natural
+language in, governed SQL out. That is the real subject of this project
+— **Agentic AI Analytics, made trustworthy by metadata engineering**.
+The agents never guess at a schema; they operate on metadata that was
+engineered first:
+
+- the published `mtr_*` **metric layer**, where every KPI is defined
+  once in dbt — agents read it, they never re-derive a number;
+- a shared **business glossary** — one definition per term, a lookup
+  table instead of prose repeated across prompts;
+- **allowlisted tables and fixed-shape queries**, so the SQL an agent
+  can produce is bounded by design, not by hope;
+- dbt's own **manifest and tests**, which the Data Steward reads live
+  for lineage and data-quality answers.
+
+The metadata does the governing; the agents do the conversing.
+Text-to-SQL without that layer is a demo — with it, it's analytics you
+can hand to a billing manager.
+
+## Prerequisite: the Claimwise pipeline
+
+This repo is the conversational surface only — the data lives in the
+[claimwise](https://github.com/senthilsweb/claimwise) monorepo, and the
+agents can't answer anything until its pipeline has run. Before starting
+here, clone claimwise, generate the synthetic seeds, and run dbt so the
+gold layer is built and populated (`make setup deps build` there
+produces `dbt-pipeline/rcm.duckdb`; point this repo's `DUCKDB_PATH` at
+it). [Getting Started](getting-started.md) walks through both repos in
+order.
 
 ## Capabilities
 
