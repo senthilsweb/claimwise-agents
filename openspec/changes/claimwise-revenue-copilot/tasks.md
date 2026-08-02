@@ -135,18 +135,16 @@ this register records what's *next*.
 - [ ] B.1 Verify Memory cross-turn recall: two `agentcore invoke` calls
   sharing an explicit session id, confirm the second recalls the first
   (the STM resource is live and attached; this behavior is unproven).
-- [ ] B.2 Rotate the OpenObserve auth token so the third OTLP backend
-  receives live-Runtime traces alongside LangSmith and Arize AX.
-- [ ] B.3 Migrate the Databricks credential from a plaintext `--env`
+- [ ] B.2 Migrate the Databricks credential from a plaintext `--env`
   value to AgentCore Identity credential vending.
-- [ ] B.4 Slack bridge: a ~50-line Bolt (Socket Mode) app speaking the
-  chat-adapter's `/chat/stream` contract — `channel + thread_ts` →
-  `session_id`, thread replies → `history`, reply via `chat.postMessage`.
-  Lives outside the adapter (docs/chat-channel.md records why).
-- [ ] B.5 Microsoft Teams bridge: same shape as Slack — webhook in,
-  thread → session, call the adapter.
-- [ ] B.6 API-key header check on chat-adapter before any public
+- [ ] B.3 Microsoft Teams bridge: a small bot service speaking the
+  chat-adapter's `/chat/stream` contract — webhook in, conversation +
+  thread → `session_id`, prior replies → `history`, reply via the Bot
+  Framework. Lives outside the adapter (docs/chat-channel.md records
+  why). Decided 2026-08-01: Teams is the planned chat platform; a Slack
+  bridge will not be built.
+- [ ] B.4 API-key header check on chat-adapter before any public
   exposure (the widget already passes custom headers via
   `config.headers`; CORS is wide open today by design, local-only).
-- [ ] B.7 Load test the live Runtime (concurrency + frontier-model
+- [ ] B.5 Load test the live Runtime (concurrency + frontier-model
   latency; nothing measured beyond single-caller timings).

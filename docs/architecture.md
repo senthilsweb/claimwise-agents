@@ -86,7 +86,7 @@ flowchart LR
 The browser path needs the bridge because `InvokeAgentRuntime` requires
 SigV4-signed requests — AWS credentials never belong in a browser. The
 full client → adapter → runtime architecture (sequence diagram, contract
-translation, how other channels like Slack slot in) has its own page:
+translation, how other channels like Teams slot in) has its own page:
 [Chat Channel](chat-channel.md).
 
 ## Agent Flow

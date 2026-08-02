@@ -32,7 +32,7 @@ for the IAM permissions the cloud path needed):
 |---|---|---|
 | [LangSmith](https://smith.langchain.com) | `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | Verified — local and cloud |
 | [Arize AX](https://app.arize.com) | `ARIZE_SPACE_ID`, `ARIZE_API_KEY`, `ARIZE_PROJECT_NAME` | Verified — local and cloud |
-| Any generic OTLP/HTTP collector | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS` | Currently failing (401) — see Runbook below |
+| Any generic OTLP/HTTP collector | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS` | Optional — exports only when configured; each backend fails independently, so one never blocks the others |
 
 `agents/telemetry.py` wires it up — no code change needed to turn any of
 these on or off. Content is unredacted by default (see the module's
@@ -185,18 +185,6 @@ has `xray:PutResourcePolicy`/`xray:ListResourcePolicies`, which
 `BedrockAgentCoreFullAccess` doesn't grant (only read-oriented X-Ray
 actions). Fixed with `AWSXRayFullAccess`. Full writeup, with both
 screenshots, in [Deployment & Integration](deployment-integration.md#observability-permissions-granted-in-two-passes).
-
-**Generic OTLP exporter fails with 401 — a stale token, not an AWS
-issue.** Once tracing was enabled end-to-end, LangSmith and Arize AX
-both started receiving traces cleanly, but the self-hosted OpenObserve
-collector (`OTEL_EXPORTER_OTLP_ENDPOINT`) logs `Failed to export span
-batch code: 401, reason: Unauthorized` on every call. Confirmed this is
-unrelated to the AgentCore deployment: running the exact same export in
-isolation locally reproduces the identical 401. The Basic-auth token in
-`OTEL_EXPORTER_OTLP_HEADERS` needs rotating on the OpenObserve side —
-until then this one backend is silently dropped while LangSmith/Arize
-keep working (each exporter fails independently; one backend's 401
-never blocks the others).
 
 ### Recovery procedures
 

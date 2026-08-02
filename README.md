@@ -45,7 +45,7 @@ The wiki lives in [docs/](docs/) and is published at
 - [Getting Started](docs/getting-started.md) — two 5-minute paths in
 - [Code Tour](docs/code-tour.md) — the folder tree and the five load-bearing files
 - [Architecture](docs/architecture.md) — tech stack, bounded-context design, agent flow, harness engineering, security
-- [Chat Channel](docs/chat-channel.md) — how a chat client reaches the deployed agent through chat-adapter, and what a new channel (Slack, Teams) would add
+- [Chat Channel](docs/chat-channel.md) — how a chat client reaches the deployed agent through chat-adapter, and what a new channel (like Microsoft Teams) would add
 - [Configuration](docs/configuration.md) — every environment variable
 - [Examples](docs/examples.md) — every way to call the agents, with real output
 - [Deployment & Integration](docs/deployment-integration.md) — running it locally and **live on AWS**

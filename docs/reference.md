@@ -87,16 +87,21 @@ plus the `ai-agent-docs` skill that defines this page structure.
 - Integration surfaces today are the CLI, the REST API, and the browser
   chat widget; conversations reach the agent through those only.
 - No load testing has been performed against the live deployment.
-- Tracing runs live on LangSmith and Arize AX; the third backend
-  (self-hosted OpenObserve) rejects its current auth token — see
-  [Operations](operations.md#runbook).
 
 ## Roadmap
 
-Planned and in-flight work lives in one place — the
+- [x] CLI (`make run`) — local chat with any specialist or the full crew
+- [x] REST API (`/invocations`) — local and on the live AgentCore Runtime
+- [x] Live AgentCore deployment with full observability (CloudWatch/X-Ray
+      plus optional LangSmith / Arize AX / generic OTLP export)
+- [x] Browser chat widget (`chat-adapter/` + mcp-chat-client, `make chat`)
+- [x] Deterministic eval suite (18/19 against live data)
+- [ ] MCP Gateway (tools packaged as Lambda targets)
+- [ ] Microsoft Teams bridge (same adapter contract as the widget)
+- [ ] Memory cross-turn recall verification
+- [ ] AgentCore Identity credential vending for the Databricks token
+- [ ] Load testing against the live Runtime
+
+The working detail behind the unchecked items lives in the
 [task register](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md)
-(`openspec/changes/claimwise-revenue-copilot/tasks.md`), following the
-AI-DLC convention that docs describe what *is* and the register records
-what's *next*. Highlights currently there: the MCP Gateway, Slack and
-Teams bridges, Memory recall verification, and AgentCore Identity
-credential vending.
+— docs describe what *is*; the register records what's *next*.

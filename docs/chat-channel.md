@@ -2,15 +2,15 @@
 
 At the end you will know exactly how a browser chat message travels
 through `chat-adapter/` to the live AgentCore Runtime and back, which
-parts of that path are channel-agnostic, and what a new channel (Slack,
-Teams, a custom app) would actually need to add.
+parts of that path are channel-agnostic, and what a new channel
+(Microsoft Teams, a custom app) would actually need to add.
 
 ## Why a separate channel layer exists
 
 The cloud Runtime only speaks `InvokeAgentRuntime` — SigV4-signed
 requests with AWS credentials. No chat surface can do that directly: a
-browser must never hold AWS credentials, and Slack can only POST to
-webhook URLs you give it. So every chat surface reaches the agent
+browser must never hold AWS credentials, and a chat platform like Teams
+can only push events to URLs you give it. So every chat surface reaches the agent
 through a credentialed bridge, and
 [`chat-adapter/`](https://github.com/senthilsweb/claimwise-agents/tree/main/chat-adapter)
 is that bridge — deliberately thin, with no agent logic in it.
@@ -20,7 +20,7 @@ flowchart LR
     subgraph Clients [Chat surfaces — no AWS credentials]
         WG[mcp-chat-client widget]
         CU[curl / any HTTP client]
-        SL[Slack / Teams bridge<br/><i>planned</i>]
+        SL[Teams bridge<br/><i>planned</i>]
     end
     subgraph Bridge [chat-adapter — holds AWS credentials]
         AD[FastAPI<br/>/chat/stream]
@@ -106,14 +106,12 @@ translation of *its* inbound contract onto the adapter's:
 |---|---|---|
 | Browser widget | nothing — the adapter speaks its contract natively | **Live** (`make chat`) |
 | Custom app / script | plain HTTP + SSE, as above | **Live** (it's just the REST contract) |
-| Slack | Slack *pushes* events (it can't consume SSE): a small [Bolt](https://tools.slack.dev/bolt-python/) app receives `app_mention`/DM events, maps `channel + thread_ts` → `session_id`, thread replies → `history`, POSTs to `/chat/stream`, and posts the final chunk back via `chat.postMessage` | Planned |
-| Microsoft Teams | same shape as Slack — receive the webhook, map thread → session, call the adapter | Planned |
+| Microsoft Teams | Teams *pushes* activities (it can't consume SSE): a small bot service receives the webhook, maps conversation + thread → `session_id`, prior replies → `history`, POSTs to `/chat/stream`, and sends the final chunk back through the Bot Framework | Planned |
 
-The Slack and Teams bridges stay outside the adapter on purpose: the
-adapter never learns channel-specific concerns (Slack signing, the
-3-second ack, thread mechanics), and each channel stays a ~50-line
-translation layer instead of a fork of the invoke path. Planned work is
-tracked in the
+The Teams bridge stays outside the adapter on purpose: the adapter
+never learns channel-specific concerns (webhook signing, ack deadlines,
+thread mechanics), and each channel stays a thin translation layer
+instead of a fork of the invoke path. Planned work is tracked in the
 [task register](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md).
 
 ## Security
