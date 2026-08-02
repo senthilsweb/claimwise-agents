@@ -80,25 +80,23 @@ plus the `ai-agent-docs` skill that defines this page structure.
 
 ## Known Limitations
 
-- No MCP Gateway (needs a Lambda-packaging step not yet built).
-- Memory is live but not yet verified to persist across turns in the
-  same session.
-- No load testing performed against the live deployment.
-- The generic OTLP backend (self-hosted OpenObserve) fails with a 401 —
-  a stale auth token, reproduced identically outside AWS, so it's
-  unrelated to the deployment itself. LangSmith and Arize AX are both
-  verified working, live, on the cloud Runtime — see
+- Read-only, by construction — there is no code path that writes to the
+  warehouse.
+- The data is synthetic: realistic distributions, but a generated
+  company.
+- Integration surfaces today are the CLI, the REST API, and the browser
+  chat widget; conversations reach the agent through those only.
+- No load testing has been performed against the live deployment.
+- Tracing runs live on LangSmith and Arize AX; the third backend
+  (self-hosted OpenObserve) rejects its current auth token — see
   [Operations](operations.md#runbook).
 
-## Future Enhancements
+## Roadmap
 
-- Package the tools as a Lambda handler and stand up the MCP Gateway.
-- Verify Memory actually recalls across two calls in the same session
-  (the resource is live; this specific behavior isn't proven yet).
-- Rotate the OpenObserve token so all three tracing backends receive
-  live-Runtime traces, not just LangSmith and Arize AX.
-- Migrate the Databricks credential from a plaintext `.env`/`--env` value
-  to AgentCore Identity's credential vending.
-- Re-run the full eval suite against the live cloud deployment (Claude
-  Sonnet 5, Databricks) and compare against the earlier local Nova Lite
-  baseline.
+Planned and in-flight work lives in one place — the
+[task register](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md)
+(`openspec/changes/claimwise-revenue-copilot/tasks.md`), following the
+AI-DLC convention that docs describe what *is* and the register records
+what's *next*. Highlights currently there: the MCP Gateway, Slack and
+Teams bridges, Memory recall verification, and AgentCore Identity
+credential vending.

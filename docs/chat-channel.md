@@ -20,7 +20,7 @@ flowchart LR
     subgraph Clients [Chat surfaces — no AWS credentials]
         WG[mcp-chat-client widget]
         CU[curl / any HTTP client]
-        SL[Slack bridge<br/><i>not built yet</i>]
+        SL[Slack / Teams bridge<br/><i>planned</i>]
     end
     subgraph Bridge [chat-adapter — holds AWS credentials]
         AD[FastAPI<br/>/chat/stream]
@@ -81,11 +81,11 @@ data: [DONE]
 Two decisions worth understanding:
 
 - **Multi-turn context travels with the request, not in the cloud.**
-  `agents/runtime.py` builds a fresh Supervisor per invocation, and
-  AgentCore Memory's cross-turn recall is still unverified — so the
-  adapter relies on the client resending its transcript, which the
-  widget already does. Follow-ups like "how does *that* compare to the
-  10% benchmark?" work today because of this folding.
+  `agents/runtime.py` builds a fresh Supervisor per invocation, and the
+  adapter deliberately doesn't lean on AgentCore Memory — so it relies
+  on the client resending its transcript, which the widget already does.
+  Follow-ups like "how does *that* compare to the 10% benchmark?" work
+  today because of this folding.
 - **The read timeout is 900s, not boto3's 60s default.** The Supervisor
   fans out to specialists, and a long answer would otherwise be cut off
   mid-run.
@@ -106,13 +106,15 @@ translation of *its* inbound contract onto the adapter's:
 |---|---|---|
 | Browser widget | nothing — the adapter speaks its contract natively | **Live** (`make chat`) |
 | Custom app / script | plain HTTP + SSE, as above | **Live** (it's just the REST contract) |
-| Slack | Slack *pushes* events (it can't consume SSE): a small [Bolt](https://tools.slack.dev/bolt-python/) app receives `app_mention`/DM events, maps `channel + thread_ts` → `session_id`, thread replies → `history`, POSTs to `/chat/stream`, and posts the final chunk back via `chat.postMessage` | Not built |
-| Teams / others | same shape as Slack — receive webhook, map thread → session, call the adapter | Not built |
+| Slack | Slack *pushes* events (it can't consume SSE): a small [Bolt](https://tools.slack.dev/bolt-python/) app receives `app_mention`/DM events, maps `channel + thread_ts` → `session_id`, thread replies → `history`, POSTs to `/chat/stream`, and posts the final chunk back via `chat.postMessage` | Planned |
+| Microsoft Teams | same shape as Slack — receive the webhook, map thread → session, call the adapter | Planned |
 
-The Slack bridge stays outside the adapter on purpose: the adapter
-never learns channel-specific concerns (Slack signing, the 3-second
-ack, thread mechanics), and each channel stays a ~50-line translation
-layer instead of a fork of the invoke path.
+The Slack and Teams bridges stay outside the adapter on purpose: the
+adapter never learns channel-specific concerns (Slack signing, the
+3-second ack, thread mechanics), and each channel stays a ~50-line
+translation layer instead of a fork of the invoke path. Planned work is
+tracked in the
+[task register](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md).
 
 ## Security
 

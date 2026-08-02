@@ -43,11 +43,11 @@ Every one of these is off by default and independently switchable — see
 | `ARIZE_SPACE_ID` / `ARIZE_API_KEY` / `ARIZE_PROJECT_NAME` | Arize AX credentials. Set either one and traces start exporting. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_EXPORTER_OTLP_HEADERS` | Any generic OTLP/HTTP collector — accepts either an org/stream base URL or a full `.../v1/traces` URL, both get normalized. |
 
-## AgentCore Memory (optional, currently untested)
+## AgentCore Memory (optional)
 
 | Variable | Meaning |
 |---|---|
-| `MEMORY_ID` | Blank by default — Memory stays fully disabled, identical to not having this section at all. Needs a live AgentCore Memory resource; see [Deployment & Integration](deployment-integration.md). |
+| `MEMORY_ID` | Blank by default — Memory stays fully disabled, identical to not having this section at all. Points at a live AgentCore Memory resource; see [Deployment & Integration](deployment-integration.md). |
 | `MEMORY_ACTOR_ID` | A placeholder actor identity (default `demo-user`) — a real deployment would derive this from the caller's authenticated identity, not a fixed string. |
 
 ## What next

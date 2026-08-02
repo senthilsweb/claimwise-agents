@@ -76,7 +76,7 @@ curl -s localhost:18080/ping
 
 ## Scaling
 
-Not yet load-tested. Each invocation builds a fresh Supervisor (and its
+No load testing has been performed. Each invocation builds a fresh Supervisor (and its
 four specialists) rather than reusing shared state, so there's no
 shared-state concern to solve before scaling horizontally — see the
 shared-Supervisor bug below for why that matters.
@@ -85,8 +85,9 @@ shared-Supervisor bug below for why that matters.
 
 Observed locally against `amazon.nova-lite-v1:0`: single-specialist
 questions typically answer in 3–4 seconds; multi-tool Supervisor
-questions (routing plus one specialist call) in a similar range. Not yet
-measured against a frontier model or under concurrent load.
+questions (routing plus one specialist call) in a similar range. These
+numbers cover a single caller against a small model — concurrent-load
+and frontier-model timings haven't been measured.
 
 ## Cost Considerations
 

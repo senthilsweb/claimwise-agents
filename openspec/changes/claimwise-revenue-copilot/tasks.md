@@ -126,3 +126,27 @@ model, `us.anthropic.claude-sonnet-5` — not the Nova Lite stand-in.
 - [ ] 5.2 Same suite green against Databricks prod through the deployed AgentCore runtime
 - [ ] 5.3 5-minute demo script recorded in README ("revenue looks down this month" walkthrough)
 - [ ] 5.4 Update specs to match reality; update project memory
+
+## Backlog (accepted, not yet scheduled into a bolt)
+
+Moved here from the docs (2026-08-01): the wiki describes what *is*;
+this register records what's *next*.
+
+- [ ] B.1 Verify Memory cross-turn recall: two `agentcore invoke` calls
+  sharing an explicit session id, confirm the second recalls the first
+  (the STM resource is live and attached; this behavior is unproven).
+- [ ] B.2 Rotate the OpenObserve auth token so the third OTLP backend
+  receives live-Runtime traces alongside LangSmith and Arize AX.
+- [ ] B.3 Migrate the Databricks credential from a plaintext `--env`
+  value to AgentCore Identity credential vending.
+- [ ] B.4 Slack bridge: a ~50-line Bolt (Socket Mode) app speaking the
+  chat-adapter's `/chat/stream` contract — `channel + thread_ts` →
+  `session_id`, thread replies → `history`, reply via `chat.postMessage`.
+  Lives outside the adapter (docs/chat-channel.md records why).
+- [ ] B.5 Microsoft Teams bridge: same shape as Slack — webhook in,
+  thread → session, call the adapter.
+- [ ] B.6 API-key header check on chat-adapter before any public
+  exposure (the widget already passes custom headers via
+  `config.headers`; CORS is wide open today by design, local-only).
+- [ ] B.7 Load test the live Runtime (concurrency + frontier-model
+  latency; nothing measured beyond single-caller timings).

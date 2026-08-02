@@ -133,7 +133,7 @@ Which method to reach for — every one has a full runnable example in
 | REST (`/invocations`) | Calling from anything that speaks HTTP, or once deployed to AgentCore Runtime |
 | Browser chat widget (`make chat`) | Conversing with the **deployed** agent from a web UI — see below and [Chat Channel](chat-channel.md) |
 | Python SDK | Embedding an agent directly in another Python process |
-| MCP | **Not built yet** — needs a Lambda-packaging step first, see below |
+| MCP | Planned — needs a Lambda-packaging step first, see below |
 | Event Driven (SQS/SNS/EventBridge/Kafka) | Not applicable — this project has no queue or event-bus trigger |
 | Agent-to-Agent | Already how the Supervisor calls its four specialists internally — see [Architecture](architecture.md#agent-to-agent-communication) |
 
@@ -172,12 +172,11 @@ docker run --rm -p 8006:8006 \
 
 ### MCP
 
-Exposing the tools (`query_metric`, `get_claim_story`, etc.) as MCP
-Gateway targets needs a Lambda-packaging step first — MCP Gateway targets
-are `lambda | openApiSchema | mcpServer | smithyModel`, not a bare Python
-function. Concrete next commands (once IAM allows it) are recorded in
-[tasks.md](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md),
-Bolt 4.2.
+Planned. Exposing the tools (`query_metric`, `get_claim_story`, etc.) as
+MCP Gateway targets needs a Lambda-packaging step first — MCP Gateway
+targets are `lambda | openApiSchema | mcpServer | smithyModel`, not a
+bare Python function. The concrete steps are recorded in the
+[task register](https://github.com/senthilsweb/claimwise-agents/blob/main/openspec/changes/claimwise-revenue-copilot/tasks.md).
 
 ## What next
 

@@ -43,6 +43,34 @@ and the live deployment execute the same code.
 | Observability | OpenTelemetry → LangSmith, Arize AX, OTLP collector; CloudWatch/X-Ray | Every prompt and tool call traced, locally and in the cloud |
 | Tooling | uv, GitHub Actions, GHCR | Dependency management, docs publish, public adapter image |
 
+### The AWS services, precisely
+
+"Deployed on AgentCore" actually touches seven AWS services. This is
+every one the live deployment uses and what it does here:
+
+| AWS service | Used for |
+|---|---|
+| Amazon Bedrock | Model inference — `us.anthropic.claude-sonnet-5`, invoked by Strands through the standard credential chain |
+| Bedrock AgentCore **Runtime** | The managed agent host: the `/invocations` endpoint, session lifecycle, `direct_code_deploy` packaging |
+| Bedrock AgentCore **Memory** | The STM-only conversation store (`claimwise_supervisor_mem`, 30-day event expiry), auto-created and attached by the deploy |
+| **IAM** | One deploy-time user (`claimwise-agents`) carrying seven AWS-managed policies, plus the Runtime's auto-created execution role (`AmazonBedrockAgentCoreSDKRuntime-…`) that the agent actually runs as |
+| **S3** | The deployment artifact bucket (`bedrock-agentcore-codebuild-sources-…`) that `direct_code_deploy` zips source into — no Docker, no ECR |
+| **CloudWatch** | The Runtime's log groups, plus the Logs *Delivery* pipeline (source → destination) that carries traces out to the GenAI Observability dashboard |
+| **X-Ray** | The trace destination behind that dashboard — including the resource policy AWS only auto-creates when the caller holds `xray:PutResourcePolicy` |
+
+The IAM detail deserves the callout: the deploy user's policies are
+`AmazonBedrockLimitedAccess` (the original model-invoke scope),
+`IAMFullAccess` (the toolkit creates the execution role for you),
+`BedrockAgentCoreFullAccess`, `AmazonS3FullAccess`,
+`AmazonBedrockAgentCoreMemoryBedrockModelInferenceExecutionRolePolicy`,
+`CloudWatchLogsFullAccess`, and `AWSXRayFullAccess` — the last two were
+discovered one failed deploy at a time, and that story (with the
+why-per-policy table) lives in
+[Deployment & Integration](deployment-integration.md#deployment).
+Runtime credentials are separate and much narrower: the execution role
+runs the agent, and the chat adapter needs exactly one permission,
+`bedrock-agentcore:InvokeAgentRuntime` on the Runtime ARN.
+
 ## Entry Points
 
 Every way a question reaches the Supervisor — same agent, different
@@ -134,12 +162,15 @@ widget resends its full transcript every turn and `chat-adapter` folds it
 into the prompt, so context travels with each request into the
 per-invocation fresh Supervisor.
 
-**Long-term (across separate invocations):** code-ready, not yet live.
-`agents/runtime.py` builds an `AgentCoreMemorySessionManager` keyed by the
-AgentCore request's session ID, but only when `MEMORY_ID` is set — blank
-by default, with identical behavior to not having Memory at all. It needs
-a live AgentCore Memory resource this account can't create yet — see
-[Deployment & Integration](deployment-integration.md).
+**Long-term (across separate invocations):** an STM-only AgentCore
+Memory resource (`claimwise_supervisor_mem`, 30-day event expiry) is
+attached to the live Runtime — `agentcore deploy` created it as a side
+effect. In code, `agents/runtime.py` builds an
+`AgentCoreMemorySessionManager` keyed by the request's session ID, and
+only when `MEMORY_ID` is set — blank means Memory stays fully out of the
+path, identical to it not existing. Only the Supervisor's dialogue is
+restored; the specialists always start blank. The chat channel doesn't
+lean on any of this — its context travels with each request, as above.
 
 ## Harness Engineering
 

@@ -147,8 +147,8 @@ confirm today's numbers are trustworthy.** ..."}
 
 ## MCP
 
-**Not built yet.** Exposing the tools (`query_metric`, `get_claim_story`,
-etc.) as MCP Gateway targets needs a Lambda-packaging step first — see
+Planned. Exposing the tools (`query_metric`, `get_claim_story`, etc.) as
+MCP Gateway targets needs a Lambda-packaging step first — see
 [Deployment & Integration](deployment-integration.md#mcp).
 
 ## Event Driven
