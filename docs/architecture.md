@@ -6,17 +6,24 @@ enforced in code rather than just in a prompt.
 
 ## High-Level Architecture
 
+The crew: one Supervisor, four specialists, each named after the role it
+plays and allowed to touch only its own bounded context.
+
 ```mermaid
-flowchart LR
-    U[Your question] --> S[Supervisor]
-    S --> A[Revenue Analyst<br/>gold/metrics]
-    S --> I[Claims Investigator<br/>gold/billing, single claim]
-    S --> D[Denials & AR Advisor<br/>gold/billing, portfolio]
-    S --> W[Data Steward<br/>governance]
-    A --> G[(Gold layer<br/>DuckDB / Databricks)]
+flowchart TB
+    U["You"] -->|"a question, in plain English"| S
+    subgraph Crew [" "]
+        direction TB
+        S["<b>Supervisor</b><br/>routes by vocabulary,<br/>owns no data tools"]
+        S --> A["<b>Revenue Analyst</b><br/>KPIs from the published<br/>metric layer (gold/metrics)"]
+        S --> I["<b>Claims Investigator</b><br/>one claim's real story<br/>(gold/billing, single claim)"]
+        S --> D["<b>Denials & AR Advisor</b><br/>payer scorecards, AR aging,<br/>appeals (gold/billing, portfolio)"]
+        S --> W["<b>Data Steward</b><br/>dbt tests, lineage,<br/>glossary (governance)"]
+    end
+    A --> G[("Gold layer<br/>DuckDB / Databricks")]
     I --> G
     D --> G
-    W --> P[dbt test / manifest.json]
+    W --> P["dbt test / manifest.json"]
 ```
 
 ## Tech Stack
