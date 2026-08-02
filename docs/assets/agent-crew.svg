@@ -1,0 +1,139 @@
+<svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="The Claimwise Revenue Copilot crew: a Supervisor routing to four specialist agents over the gold layer">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1200" height="700" rx="20" fill="url(#panel)"/>
+  <text x="40" y="48" font-size="14" letter-spacing="3" fill="#64748b" font-weight="600">CLAIMWISE REVENUE COPILOT — THE CREW</text>
+
+  <!-- you -->
+  <g>
+    <rect x="522" y="64" width="156" height="46" rx="23" fill="#131f35" stroke="#334155"/>
+    <g transform="translate(548,75) scale(1)" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </g>
+    <text x="584" y="93" font-size="16" fill="#e2e8f0" font-weight="600">You</text>
+  </g>
+
+  <path d="M600 112 L600 158" stroke="#475569" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="614" y="140" font-size="12.5" fill="#64748b" font-style="italic">a question, in plain English</text>
+
+  <!-- supervisor -->
+  <g>
+    <rect x="412" y="162" width="376" height="92" rx="14" fill="#131f35" stroke="#155e75"/>
+    <rect x="412" y="162" width="376" height="4" rx="2" fill="#22d3ee"/>
+    <g transform="translate(438,192) scale(1.4)" fill="none" stroke="#67e8f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>
+    </g>
+    <text x="492" y="200" font-size="18" fill="#f1f5f9" font-weight="700">Supervisor</text>
+    <text x="492" y="226" font-size="13" fill="#94a3b8">routes by vocabulary · owns no data tools ·</text>
+    <text x="492" y="243" font-size="13" fill="#94a3b8">composes multi-specialist answers</text>
+  </g>
+
+  <!-- connectors supervisor -> specialists -->
+  <path d="M600 258 C600 292, 180 284, 180 316" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M600 258 C600 292, 460 288, 460 316" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M600 258 C600 292, 740 288, 740 316" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M600 258 C600 292, 1020 284, 1020 316" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Revenue Analyst : cyan -->
+  <g>
+    <rect x="55" y="320" width="250" height="168" rx="14" fill="#131f35" stroke="#263650"/>
+    <rect x="55" y="320" width="250" height="4" rx="2" fill="#22d3ee"/>
+    <g transform="translate(75,340) scale(1.5)" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+    </g>
+    <g transform="translate(261,338) scale(1)" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+      <path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>
+    </g>
+    <text x="75" y="412" font-size="16" fill="#f1f5f9" font-weight="700">Revenue Analyst</text>
+    <text x="75" y="436" font-size="12.5" fill="#94a3b8">KPIs from the published metric</text>
+    <text x="75" y="453" font-size="12.5" fill="#94a3b8">layer — never re-derived</text>
+    <text x="75" y="474" font-size="11.5" fill="#155e75" font-weight="600" letter-spacing="0.5">gold/metrics</text>
+  </g>
+
+  <!-- Claims Investigator : violet -->
+  <g>
+    <rect x="335" y="320" width="250" height="168" rx="14" fill="#131f35" stroke="#263650"/>
+    <rect x="335" y="320" width="250" height="4" rx="2" fill="#a78bfa"/>
+    <g transform="translate(355,340) scale(1.5)" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+    </g>
+    <g transform="translate(541,338) scale(1)" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    </g>
+    <text x="355" y="412" font-size="16" fill="#f1f5f9" font-weight="700">Claims Investigator</text>
+    <text x="355" y="436" font-size="12.5" fill="#94a3b8">one claim's real story, told in</text>
+    <text x="355" y="453" font-size="12.5" fill="#94a3b8">the order it actually happened</text>
+    <text x="355" y="474" font-size="11.5" fill="#6d5bb8" font-weight="600" letter-spacing="0.5">gold/billing · single claim</text>
+  </g>
+
+  <!-- Denials & AR Advisor : amber -->
+  <g>
+    <rect x="615" y="320" width="250" height="168" rx="14" fill="#131f35" stroke="#263650"/>
+    <rect x="615" y="320" width="250" height="4" rx="2" fill="#fbbf24"/>
+    <g transform="translate(635,340) scale(1.5)" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+    </g>
+    <g transform="translate(821,338) scale(1)" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+      <polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>
+    </g>
+    <text x="635" y="412" font-size="16" fill="#f1f5f9" font-weight="700">Denials &amp; AR Advisor</text>
+    <text x="635" y="436" font-size="12.5" fill="#94a3b8">payer scorecards, AR aging,</text>
+    <text x="635" y="453" font-size="12.5" fill="#94a3b8">appeal outcomes</text>
+    <text x="635" y="474" font-size="11.5" fill="#a16207" font-weight="600" letter-spacing="0.5">gold/billing · portfolio</text>
+  </g>
+
+  <!-- Data Steward : emerald -->
+  <g>
+    <rect x="895" y="320" width="250" height="168" rx="14" fill="#131f35" stroke="#263650"/>
+    <rect x="895" y="320" width="250" height="4" rx="2" fill="#34d399"/>
+    <g transform="translate(915,340) scale(1.5)" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+    </g>
+    <g transform="translate(1101,338) scale(1)" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>
+    </g>
+    <text x="915" y="412" font-size="16" fill="#f1f5f9" font-weight="700">Data Steward</text>
+    <text x="915" y="436" font-size="12.5" fill="#94a3b8">runs dbt tests live, traces</text>
+    <text x="915" y="453" font-size="12.5" fill="#94a3b8">lineage, keeps the glossary</text>
+    <text x="915" y="474" font-size="11.5" fill="#15803d" font-weight="600" letter-spacing="0.5">governance</text>
+  </g>
+
+  <!-- connectors specialists -> data -->
+  <path d="M180 492 C180 530, 470 528, 484 556" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M460 492 C460 524, 528 530, 534 556" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M740 492 C740 524, 610 530, 598 556" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1020 492 C1020 520, 1016 528, 1014 556" stroke="#475569" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- gold layer -->
+  <g>
+    <rect x="392" y="560" width="298" height="84" rx="14" fill="#131f35" stroke="#3b3416"/>
+    <rect x="392" y="560" width="298" height="4" rx="2" fill="#eab308"/>
+    <g transform="translate(414,582) scale(1.4)" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+    </g>
+    <text x="464" y="597" font-size="15" fill="#f1f5f9" font-weight="700">Gold layer</text>
+    <text x="464" y="619" font-size="12.5" fill="#94a3b8">DuckDB (dev) / Databricks (prod)</text>
+    <text x="464" y="636" font-size="12.5" fill="#94a3b8">read-only, by construction</text>
+  </g>
+
+  <!-- dbt -->
+  <g>
+    <rect x="880" y="560" width="268" height="84" rx="14" fill="#131f35" stroke="#48261d"/>
+    <rect x="880" y="560" width="268" height="4" rx="2" fill="#ff694a"/>
+    <g transform="translate(902,582) scale(1.4)" fill="none" stroke="#ff694a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>
+    </g>
+    <text x="952" y="597" font-size="15" fill="#f1f5f9" font-weight="700">dbt</text>
+    <text x="952" y="619" font-size="12.5" fill="#94a3b8">dbt test, run live · lineage from</text>
+    <text x="952" y="636" font-size="12.5" fill="#94a3b8">manifest.json</text>
+  </g>
+</svg>

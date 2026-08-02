@@ -47,6 +47,8 @@ organized as DDD bounded contexts (`billing`, `clinical`, `admin`,
 `metrics`), so the agent team mirrors the data's own boundaries instead
 of piling every tool into one agent.
 
+![The Revenue Copilot crew — one Supervisor routing to four color-coded specialist agents over the gold layer](assets/agent-crew.svg)
+
 And you can reach the copilot however suits you: from a **browser chat
 widget** talking to the live deployment ([Chat Channel](chat-channel.md)),
 over the **REST API** ([Examples](examples.md)), or from the **CLI**
